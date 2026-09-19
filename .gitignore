@@ -27,3 +27,4 @@ Thumbs.db
 # generated
 apps/bff/src/generated/
 
+*.tsbuildinfo
