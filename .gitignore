@@ -28,3 +28,5 @@ Thumbs.db
 apps/bff/src/generated/
 
 *.tsbuildinfo
+
+.docs/

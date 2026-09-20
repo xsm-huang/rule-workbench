@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+enum SchemeStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id           String          @id @default(cuid())
+  username     String          @unique
+  passwordHash String          @map("password_hash")
+  displayName  String          @map("display_name")
+  role         UserRole
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  schemes      Scheme[]        @relation("SchemeCreator")
+  versions     SchemeVersion[] @relation("VersionCreator")
+
+  @@map("users")
+}
+
+model Scheme {
+  id             String          @id @default(cuid())
+  code           String          @unique
+  name           String
+  description    String?
+  status         SchemeStatus    @default(DRAFT)
+  currentVersion Int             @default(1) @map("current_version")
+  revision       Int             @default(0)
+  createdById    String          @map("created_by_id")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  createdBy      User            @relation("SchemeCreator", fields: [createdById], references: [id])
+  versions       SchemeVersion[]
+
+  @@index([status, updatedAt])
+  @@index([createdById])
+  @@map("schemes")
+}
+
+model SchemeVersion {
+  id          String   @id @default(cuid())
+  schemeId    String   @map("scheme_id")
+  version     Int
+  snapshot    Json
+  changeNote  String?  @map("change_note")
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  scheme      Scheme   @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+  createdBy   User     @relation("VersionCreator", fields: [createdById], references: [id])
+
+  @@unique([schemeId, version])
+  @@index([createdById])
+  @@map("scheme_versions")
+}
