@@ -1,52 +1,30 @@
 <script setup lang="ts">
-interface SchemeListItem {
-  id: string
-  code: string
-  name: string
-  pricingMode: 'UNIT_PRICE' | 'TOTAL_POOL'
-  status: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED'
-  ownerName: string
-  updatedAt: string
-}
+import { ref, onMounted } from 'vue'
+import { type SchemeListItem, getSchemeList } from '@/api/schemes'
+import { ElMessage } from 'element-plus'
 
-const schemeList: SchemeListItem[] = [
-  {
-    id: 'scheme-001',
-    code: 'SC2026001',
-    name: '华东区域销售方案',
-    pricingMode: 'UNIT_PRICE',
-    status: 'DRAFT',
-    ownerName: '张三',
-    updatedAt: '2026-09-20 14:30',
-  },
-  {
-    id: 'scheme-002',
-    code: 'SC2026002',
-    name: '年度渠道激励方案',
-    pricingMode: 'TOTAL_POOL',
-    status: 'PENDING_REVIEW',
-    ownerName: '李四',
-    updatedAt: '2026-09-19 10:15',
-  },
-  {
-    id: 'scheme-003',
-    code: 'SC2026003',
-    name: '重点客户价格方案',
-    pricingMode: 'UNIT_PRICE',
-    status: 'PUBLISHED',
-    ownerName: '王五',
-    updatedAt: '2026-09-18 16:40',
-  },
-  {
-    id: 'scheme-004',
-    code: 'SC2026004',
-    name: '季度专项奖励方案',
-    pricingMode: 'TOTAL_POOL',
-    status: 'REJECTED',
-    ownerName: '赵六',
-    updatedAt: '2026-09-17 09:20',
-  },
-]
+const schemeList = ref<SchemeListItem[]>([])
+const isLoading = ref(false)
+const errorMessage = ref('')
+
+const loadSchemeList = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await getSchemeList()
+    schemeList.value = response.items
+  } catch (error) {
+    errorMessage.value = `加载方案列表失败，请稍后重试`
+    ElMessage.error(errorMessage.value)
+    console.error('加载方案列表失败:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+onMounted(() => {
+  loadSchemeList()
+})
 
 type SchemeStatus = SchemeListItem['status']
 type PricingMode = SchemeListItem['pricingMode']
@@ -85,6 +63,15 @@ const getPricingModeLabel = (pricingMode: PricingMode): string => {
         <span class="table-count">共 {{ schemeList.length }} 条</span>
       </div>
       <el-table :data="schemeList" stripe border>
+        <template #empty>
+          <template v-if="errorMessage">
+            <span>加载失败 </span>
+            <!-- TODO 调整样式，对齐文字 -->
+            <el-button type="text" @click="loadSchemeList" :loading="isLoading"> 刷新 </el-button>
+          </template>
+          <span v-else>暂无数据</span>
+        </template>
+
         <el-table-column prop="code" label="方案编码" width="140" />
         <el-table-column prop="name" label="方案名称" min-width="200" />
         <el-table-column label="计价模式" width="140">

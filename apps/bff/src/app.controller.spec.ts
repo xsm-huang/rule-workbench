@@ -29,6 +29,27 @@ describe('AppController (e2e)', () => {
     });
   });
 
+  it('/api/schemes (GET)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/schemes')
+      .expect(200)
+      .expect('Content-Type', /json/);
+
+    expect(response.body).toMatchObject({
+      items: [
+        {
+          id: 'scheme-001',
+          code: 'SC2026001',
+          name: '华东区域销售方案',
+          pricingMode: 'UNIT_PRICE',
+          status: 'DRAFT',
+          ownerName: '张三',
+          updatedAt: '2026-09-20 14:30',
+        },
+      ],
+    });
+  });
+
   afterEach(async () => {
     await app.close();
   });
