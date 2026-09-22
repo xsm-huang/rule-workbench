@@ -3,73 +3,85 @@
 
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
+// 定义了数据模型后，生成可供 TypeScript 使用的 Prisma Client，运行 `npx prisma generate`。
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
+// 名为 db 的数据源使用 PostgreSQL
 datasource db {
   provider = "postgresql"
 }
 
+// EDITOR-编辑， REVIEWER-审核， VIEWER-查看
 enum UserRole {
-  ADMIN
-  OPERATOR
+  EDITOR
+  REVIEWER
   VIEWER
 }
 
+// DRAFT-草稿， PENDING_REVIEW-待审核， PUBLISHED-已发布， REJECTED-已驳回
 enum SchemeStatus {
   DRAFT
-  REVIEW
+  PENDING_REVIEW
   PUBLISHED
-  ARCHIVED
+  REJECTED
+}
+
+// UNIT_PRICE-单价计价， TOTAL_POOL-总盘计价
+enum PricingMode {
+  UNIT_PRICE
+  TOTAL_POOL
 }
 
 model User {
-  id           String          @id @default(cuid())
-  username     String          @unique
-  passwordHash String          @map("password_hash")
-  displayName  String          @map("display_name")
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String   @map("display_name")
   role         UserRole
-  createdAt    DateTime        @default(now()) @map("created_at")
-  updatedAt    DateTime        @updatedAt @map("updated_at")
-  schemes      Scheme[]        @relation("SchemeCreator")
-  versions     SchemeVersion[] @relation("VersionCreator")
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  schemes      Scheme[]
 
   @@map("users")
 }
 
 model Scheme {
-  id             String          @id @default(cuid())
-  code           String          @unique
-  name           String
-  description    String?
-  status         SchemeStatus    @default(DRAFT)
-  currentVersion Int             @default(1) @map("current_version")
-  revision       Int             @default(0)
-  createdById    String          @map("created_by_id")
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
-  createdBy      User            @relation("SchemeCreator", fields: [createdById], references: [id])
-  versions       SchemeVersion[]
+  id               String       @id @default(cuid())
+  code             String       @unique
+  name             String
+  scope            String
+  pricingMode      PricingMode  @map("pricing_mode")
+  effectiveDate    DateTime     @map("effective_date")
+  remark           String?
+  status           SchemeStatus @default(DRAFT)
+  ownerId          String       @map("owner_id")
+  content          Json
+  editVersion      Int          @default(1) @map("edit_version")
+  currentVersionNo Int          @default(1) @map("current_version_no")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  owner            User         @relation(fields: [ownerId], references: [id])
 
   @@index([status, updatedAt])
-  @@index([createdById])
+  @@index([ownerId])
   @@map("schemes")
 }
 
-model SchemeVersion {
-  id          String   @id @default(cuid())
-  schemeId    String   @map("scheme_id")
-  version     Int
-  snapshot    Json
-  changeNote  String?  @map("change_note")
-  createdById String   @map("created_by_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  scheme      Scheme   @relation(fields: [schemeId], references: [id], onDelete: Cascade)
-  createdBy   User     @relation("VersionCreator", fields: [createdById], references: [id])
+// model SchemeVersion {
+//   id          String   @id @default(cuid())
+//   schemeId    String   @map("scheme_id")
+//   version     Int
+//   snapshot    Json
+//   changeNote  String?  @map("change_note")
+//   createdById String   @map("created_by_id")
+//   createdAt   DateTime @default(now()) @map("created_at")
+//   scheme      Scheme   @relation(fields: [schemeId], references: [id], onDelete: Cascade)
+//   createdBy   User     @relation("VersionCreator", fields: [createdById], references: [id])
 
-  @@unique([schemeId, version])
-  @@index([createdById])
-  @@map("scheme_versions")
-}
+//   @@unique([schemeId, version])
+//   @@index([createdById])
+//   @@map("scheme_versions")
+// }
