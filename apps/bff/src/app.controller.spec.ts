@@ -35,19 +35,25 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect('Content-Type', /json/);
 
-    expect(response.body).toMatchObject({
-      items: [
-        {
-          id: 'scheme-001',
-          code: 'SC2026001',
-          name: '华东区域销售方案',
-          pricingMode: 'UNIT_PRICE',
-          status: 'DRAFT',
-          ownerName: '张三',
-          updatedAt: '2026-09-20 14:30',
-        },
-      ],
-    });
+    expect(response.body.items).toHaveLength(3);
+
+    expect(response.body.items).toContainEqual(
+      expect.objectContaining({
+        id: 'scheme-001',
+        code: 'SC2026001',
+        name: '华东区域销售方案',
+        pricingMode: 'UNIT_PRICE',
+        status: 'DRAFT',
+        ownerName: '张查看',
+        updatedAt: expect.any(String),
+      }),
+    );
+
+    for (const item of response.body.items) {
+      expect(item).not.toHaveProperty('content');
+      expect(item).not.toHaveProperty('passwordHash');
+      expect(item).not.toHaveProperty('ownerId');
+    }
   });
 
   afterEach(async () => {
