@@ -13,6 +13,11 @@ export interface SchemeListItemDto {
   updatedAt: string;
 }
 
-export interface SchemeListResponseDto {
-  items: SchemeListItemDto[];
+export interface PageResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 }
+export type SchemeListResponseDto = PageResult<SchemeListItemDto>;
