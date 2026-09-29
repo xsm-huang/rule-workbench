@@ -30,6 +30,7 @@ class TestErrorsController {
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+  let agent: request.Agent;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -40,10 +41,16 @@ describe('AppController (e2e)', () => {
     app = moduleFixture.createNestApplication();
     configureApp(app);
     await app.init();
+
+    agent = request.agent(app.getHttpServer());
+    await agent.post('/api/auth/login').send({
+      email: 'editor@example.com',
+      password: 'editor123',
+    }).expect(200);
   });
 
   it('/api/health (GET)', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/health')
       .expect(200)
       .expect('Content-Type', /json/);
@@ -62,10 +69,10 @@ describe('AppController (e2e)', () => {
   });
 
   it('assigns a unique request ID to each request', async () => {
-    const firstResponse = await request(app.getHttpServer())
+    const firstResponse = await agent
       .get('/api/health')
       .expect(200);
-    const secondResponse = await request(app.getHttpServer())
+    const secondResponse = await agent
       .get('/api/health')
       .expect(200);
 
@@ -80,7 +87,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('/api/schemes (GET)', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .expect(200)
       .expect('Content-Type', /json/);
@@ -122,7 +129,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('/api/schemes?page=1&pageSize=2 (GET)', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ page: 1, pageSize: 2 })
       .expect(200);
@@ -137,7 +144,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('/api/schemes?status=DRAFT (GET)', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ status: 'DRAFT' })
       .expect(200);
@@ -151,7 +158,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('filters schemes by pricing mode', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ pricingMode: 'UNIT_PRICE' })
       .expect(200);
@@ -166,7 +173,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('filters schemes by owner', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ ownerId: 'user-editor' })
       .expect(200);
@@ -176,7 +183,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('filters schemes by keyword', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ keyword: 'SC2026002' })
       .expect(200);
@@ -186,7 +193,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('filters schemes by updatedAt range', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ updatedTo: '2000-01-01T00:00:00.000Z' })
       .expect(200);
@@ -196,7 +203,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('sorts schemes by updatedAt ascending', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ sort: 'updatedAt:asc' })
       .expect(200);
@@ -211,7 +218,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('sorts schemes by updatedAt descending', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ sort: 'updatedAt:desc' })
       .expect(200);
@@ -226,7 +233,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('rejects an invalid pageSize', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ pageSize: 1000 })
       .expect(400);
@@ -249,7 +256,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('rejects an invalid page number', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/schemes')
       .query({ page: 0 })
       .expect(400);
@@ -272,7 +279,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('returns a structured business error', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/__test/errors/business')
       .expect(409);
 
@@ -288,7 +295,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('returns a structured not found error', async () => {
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/route-that-does-not-exist')
       .expect(404);
 
@@ -308,7 +315,7 @@ describe('AppController (e2e)', () => {
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
 
-    const response = await request(app.getHttpServer())
+    const response = await agent
       .get('/api/__test/errors/system')
       .expect(500);
 
