@@ -1,3 +1,4 @@
+import type { ApiResponse } from '@rule-workbench/contracts'
 import http from './http'
 
 export type SchemeStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED'
@@ -38,6 +39,9 @@ export interface PageResult<T> {
 export type SchemeListResponse = PageResult<SchemeListItem>
 
 export const getSchemeList = async (params: SchemeListQuery): Promise<SchemeListResponse> => {
-  const { data } = await http.get<SchemeListResponse>('/schemes', { params })
-  return data
+  const { data: response } = await http.get<ApiResponse<SchemeListResponse>>('/schemes', { params })
+  if (!response.success) {
+    throw new Error(response.error.message)
+  }
+  return response.data
 }

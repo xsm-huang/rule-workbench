@@ -1,8 +1,8 @@
 /** 初始化业务数据 */
 
 import 'dotenv/config';
-// 使用 Node.js 内置的 crypto 模块进行密码加密
-import { scryptSync } from 'node:crypto';
+// 使用  bcrypt 模块进行密码加密
+import bcrypt from 'bcrypt';
 // PostgreSQL 驱动
 import { PrismaPg } from '@prisma/adapter-pg';
 // PostgreSQL 连接池
@@ -24,17 +24,15 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg(pool),
 });
 
-// 使用 scrypt 算法进行密码加密
-function hashPassword(password: string): string {
-  // 在实际应用中，应使用随机生成的盐值，用于避免同一密码得到完全相同的哈希结果
-  const salt = 'rule-workbench-demo-seed';
-  // 使用 scrypt 算法对密码进行加密，并将结果转换为十六进制字符串
-  const passwordHash = scryptSync(password, salt, 64).toString('hex');
-  // 返回加密后的密码字符串，包含算法和盐，未来校验密码时才能知道如何计算
-  return `scrypt$${salt}$${passwordHash}`;
+// bcrypt 的计算成本
+const BCRYPT_ROUNDS = 12;
+// 使用 bcrypt 算法进行密码加密
+function hashPassword(password: string): Promise<string> {
+  // bcrypt.hash(...)：异步生成随机盐，并结合密码和成本计算摘要
+  return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
 
-// 定义要插入的用户数据
+// 定义要插入的用户数据, 成本越高，攻击者批量猜密码越慢
 const users = [
   {
     id: 'user-viewer',
@@ -116,6 +114,7 @@ const schemes = [
 async function main() {
   // 遍历用户数据，插入到数据库中。数据量很大时可考虑批量操作或并发
   for (const user of users) {
+    const passwordHash = await hashPassword(user.password);
     // 使用 upsert 方法插入或更新用户数据，确保不会重复插入相同的用户
     await prisma.user.upsert({
       // 根据唯一字段 id 查找用户，如果存在则更新，否则创建新用户
@@ -125,7 +124,7 @@ async function main() {
         displayName: user.displayName,
         role: user.role,
         enabled: true,
-        passwordHash: hashPassword(user.password),
+        passwordHash,
       },
       create: {
         id: user.id,
@@ -133,7 +132,7 @@ async function main() {
         displayName: user.displayName,
         role: user.role,
         enabled: true,
-        passwordHash: hashPassword(user.password),
+        passwordHash,
       },
     });
   }

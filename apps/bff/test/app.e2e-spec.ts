@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from './../src/app.module.js';
+import { configureApp } from './../src/configure-app.js';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -12,7 +13,7 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
+    configureApp(app);
     await app.init();
   });
 
@@ -23,10 +24,17 @@ describe('AppController (e2e)', () => {
       .expect('Content-Type', /json/);
 
     expect(response.body).toEqual({
-      status: 'ok',
-      service: 'rule-workbench-bff',
-      timestamp: expect.any(String),
+      success: true,
+      data: {
+        status: 'ok',
+        service: 'rule-workbench-bff',
+        timestamp: expect.any(String),
+      },
+      requestId: expect.any(String),
     });
+
+    expect(response.body.requestId).not.toBe('');
+    expect(response.headers['x-request-id']).toBe(response.body.requestId);
   });
 
   afterEach(async () => {

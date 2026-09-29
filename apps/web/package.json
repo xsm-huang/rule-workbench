@@ -21,7 +21,8 @@
     "element-plus": "^2.14.6",
     "pinia": "^4.0.3",
     "vue": "^3.5.42",
-    "vue-router": "^5.3.1"
+    "vue-router": "^5.3.1",
+    "@rule-workbench/contracts": "workspace:*"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.5",
