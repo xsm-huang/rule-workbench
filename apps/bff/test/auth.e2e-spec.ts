@@ -6,9 +6,7 @@ import { configureApp } from '../src/configure-app.js';
 
 function toHeaderValues(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value.filter(
-      (entry): entry is string => typeof entry === 'string',
-    );
+    return value.filter((entry): entry is string => typeof entry === 'string');
   }
 
   return typeof value === 'string' ? [value] : [];
@@ -79,7 +77,7 @@ describe('Auth (e2e)', () => {
       .post('/api/auth/login')
       .send({
         email: 'editor@example.com',
-        password: 'editor123',
+        password: 'Editor123',
       })
       .expect(200);
 
@@ -92,13 +90,11 @@ describe('Auth (e2e)', () => {
     expect(loginResponse.body.data).not.toHaveProperty('token');
     expect(loginResponse.body.data).not.toHaveProperty('passwordHash');
 
-    const loginCookies = toHeaderValues(
-      loginResponse.headers['set-cookie'],
-    );
+    const loginCookies = toHeaderValues(loginResponse.headers['set-cookie']);
 
-    expect(
-      loginCookies?.some((cookie) => cookie.includes('HttpOnly')),
-    ).toBe(true);
+    expect(loginCookies?.some((cookie) => cookie.includes('HttpOnly'))).toBe(
+      true,
+    );
 
     const meResponse = await agent.get('/api/auth/me').expect(200);
 
@@ -110,9 +106,7 @@ describe('Auth (e2e)', () => {
       loggedOut: true,
     });
 
-    const logoutCookies = toHeaderValues(
-      logoutResponse.headers['set-cookie'],
-    );
+    const logoutCookies = toHeaderValues(logoutResponse.headers['set-cookie']);
 
     expect(
       logoutCookies?.some((cookie) => cookie.startsWith('access_token=;')),

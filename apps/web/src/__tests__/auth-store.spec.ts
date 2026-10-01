@@ -45,7 +45,7 @@ describe('auth store', () => {
 
     await authStore.login({
       email: 'editor@example.com',
-      password: 'editor123',
+      password: 'Editor123',
     })
 
     expect(authStore.user).toEqual(editorUser)
@@ -85,7 +85,7 @@ describe('auth store', () => {
 
     await authStore.login({
       email: 'editor@example.com',
-      password: 'editor123',
+      password: 'Editor123',
     })
 
     await authStore.logout()
