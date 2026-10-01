@@ -39,21 +39,21 @@ const users = [
     email: 'viewer@example.com',
     displayName: '张查看',
     role: 'VIEWER' as const, // 将 TypeScript 类型锁定为字面量
-    password: 'viewer123', //只存在于 Seed 执行过程中的内存；写库时只会写入 passwordHash
+    password: 'Viewer123', //只存在于 Seed 执行过程中的内存；写库时只会写入 passwordHash
   },
   {
     id: 'user-editor',
     email: 'editor@example.com',
     displayName: '李编辑',
     role: 'EDITOR' as const,
-    password: 'editor123',
+    password: 'Editor123',
   },
   {
     id: 'user-reviewer',
     email: 'reviewer@example.com',
     displayName: '王审核',
     role: 'REVIEWER' as const,
-    password: 'reviewer123',
+    password: 'Reviewer123',
   },
 ];
 

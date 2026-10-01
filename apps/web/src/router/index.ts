@@ -1,17 +1,37 @@
+import { useAuthStore } from '@/stores/auth.ts'
+import { pinia } from '@/stores/index.ts'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { resolvePostLoginRedirect } from './auth-redirect.ts'
+
+/**
+ * 扩展 Vue Router 的路由元信息类型。
+ */
+declare module 'vue-router' {
+  /**
+   * 不写时默认是 protected，即必须登录。
+   *
+   * public：任何人都能访问。
+   * guest：仅未登录用户能访问。
+   * protected：可显式标记，但通常无需写。
+   */
+  interface RouteMeta {
+    access?: 'public' | 'guest' | 'protected'
+  }
+}
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/login',
+    redirect: '/schemes', // 根路径统一进入业务页，再由路由守卫判断是否需要登录。
   },
   {
     path: '/login',
+    name: 'login',
     component: () => import('../views/LoginView.vue'),
+    meta: { access: 'guest' },
   },
   {
     path: '/schemes',
-
     component: () => import('../views/WorkbenchView.vue'),
     children: [
       {
@@ -26,6 +46,34 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+})
+
+/**
+ * 全局前置守卫
+ */
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore(pinia)
+  // 首次打开应用时获取用户信息
+  if (authStore.status === 'unknown' || authStore.status === 'loading') {
+    await authStore.restoreSession()
+  }
+
+  const access = to.meta.access ?? 'protected'
+  // 未登录用户访问受保护页面
+  if (access === 'protected' && !authStore.isLoggedIn) {
+    return {
+      name: 'login',
+      query: { redirect: to.fullPath },
+      replace: true,
+    }
+  }
+
+  // 已登录用户再次打开登录页时，直接进入业务页面。
+  if (to.meta.access === 'guest' && authStore.isLoggedIn) {
+    return resolvePostLoginRedirect(to.query.redirect)
+  }
+
+  return true
 })
 
 export default router

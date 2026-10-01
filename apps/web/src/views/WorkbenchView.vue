@@ -1,9 +1,3 @@
-<script setup lang="ts">
-import { RouterView, useRoute } from 'vue-router'
-
-const route = useRoute()
-</script>
-
 <template>
   <div class="workbench-layout">
     <div class="sidebar">
@@ -17,13 +11,20 @@ const route = useRoute()
         unique-opened
         router
       >
-        <el-menu-item index="schemes"> 方案管理 </el-menu-item>
+        <el-menu-item index="/schemes"> 方案管理 </el-menu-item>
       </el-menu>
     </div>
     <div class="main-area">
       <header class="topbar">
         <span class="page-title">方案工作台</span>
-        <span class="user-name">管理员</span>
+        <div class="user-actions">
+          <span class="user-name">
+            {{ authStore.user?.displayName ?? '未知用户' }}
+          </span>
+          <el-button link type="primary" :loading="loggingOut" @click="handleLogout"
+            >退出登录</el-button
+          >
+        </div>
       </header>
       <main class="content">
         <RouterView />
@@ -31,6 +32,36 @@ const route = useRoute()
     </div>
   </div>
 </template>
+<script setup lang="ts">
+import { getApiErrorMessage } from '@/api/error'
+import { pinia } from '@/stores'
+import { useAuthStore } from '@/stores/auth'
+import { ElMessage } from 'element-plus'
+import { ref } from 'vue'
+import { RouterView, useRoute, useRouter } from 'vue-router'
+
+const route = useRoute()
+const router = useRouter()
+
+const authStore = useAuthStore(pinia)
+const loggingOut = ref(false)
+
+const handleLogout = async (): Promise<void> => {
+  if (loggingOut.value) return
+
+  loggingOut.value = true
+
+  try {
+    await authStore.logout()
+    ElMessage.success('已退出登录')
+    await router.replace({ name: 'login' })
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '退出失败，请稍后重试'))
+  } finally {
+    loggingOut.value = false
+  }
+}
+</script>
 
 <style scoped lang="scss">
 .workbench-layout {
@@ -78,6 +109,13 @@ const route = useRoute()
 .page-title {
   font-size: 18px;
   font-weight: 600;
+}
+
+.user-actions {
+  // 让用户名和退出按钮水平排列。
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .user-name {
