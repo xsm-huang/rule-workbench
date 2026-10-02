@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from '../common/auth/auth.guard.js';
+import { RolesGuard } from '../common/auth/roles.guard.js';
 
 @Module({
   imports: [
@@ -39,7 +40,11 @@ import { AuthGuard } from '../common/auth/auth.guard.js';
     AuthService,
     {
       provide: APP_GUARD,
-      useClass: AuthGuard,
+      useClass: AuthGuard, // 验证登录身份
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard, // 检查接口上的 @Roles(...)
     },
   ],
 })

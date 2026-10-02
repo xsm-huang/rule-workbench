@@ -7,6 +7,7 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ApiResponseInterceptor } from './common/request-id/api-response.interceptor.js';
 import { AllExceptionFilter } from './common/request-id/exceptions/all-exceptions.filter.js';
 import { AuthModule } from './auth/auth.module.js';
+import { WorkbenchModule } from './workbench/workbench.module.js';
 @Module({
   imports: [
     // 启动 NestJS 时读取 apps/bff/.env 中的变量
@@ -14,6 +15,7 @@ import { AuthModule } from './auth/auth.module.js';
     ConfigModule.forRoot({ isGlobal: true }),
     SchemesModule,
     AuthModule,
+    WorkbenchModule,
   ],
   controllers: [AppController],
   providers: [

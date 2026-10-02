@@ -3,6 +3,10 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import type { SchemeListResponseDto } from './dto/scheme-list.dto.js';
 import type { SchemeListQueryDto } from './dto/scheme-list-query.dto.js';
 import type { Prisma } from '../generated/prisma/client.js';
+import {
+  schemeListItemSelect,
+  toSchemeListItem,
+} from './schemes-list.mapper.js';
 
 // 让 Nest 接管 SchemesService 的创建
 @Injectable()
@@ -55,33 +59,13 @@ export class SchemesService {
         orderBy: {
           updatedAt: sort === 'updatedAt:asc' ? 'asc' : 'desc',
         },
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          pricingMode: true,
-          status: true,
-          updatedAt: true,
-          owner: {
-            select: {
-              displayName: true,
-            },
-          },
-        },
+        select: schemeListItemSelect,
       }),
       this.prisma.scheme.count({ where }),
     ]);
 
     return {
-      items: schemes.map((scheme) => ({
-        id: scheme.id,
-        code: scheme.code,
-        name: scheme.name,
-        pricingMode: scheme.pricingMode,
-        status: scheme.status,
-        ownerName: scheme.owner.displayName,
-        updatedAt: scheme.updatedAt.toISOString(),
-      })),
+      items: schemes.map(toSchemeListItem),
       page,
       pageSize,
       total,

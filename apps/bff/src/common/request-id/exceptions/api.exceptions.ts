@@ -9,6 +9,7 @@ export interface ApiExceptionOptions<
   status: HttpStatus;
 }
 
+/** 自定义接口异常 */
 export class ApiException<TCode extends string = string> extends HttpException {
   readonly code: TCode;
   readonly fieldErrors?: ApiFieldError[];
