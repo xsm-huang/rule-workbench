@@ -3,7 +3,7 @@ import { type AuthUser } from '@rule-workbench/contracts'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import * as authApi from '@/api/auth'
-import { isUnauthorizadError } from '@/api/error'
+import { isUnauthorizedError } from '@/api/error'
 
 /**
  * unknown - 未知
@@ -79,7 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await authApi.logout()
     } catch (error) {
-      if (!isUnauthorizadError(error)) {
+      if (!isUnauthorizedError(error)) {
         throw error
       }
     }

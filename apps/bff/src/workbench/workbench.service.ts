@@ -33,22 +33,28 @@ export class workbenchService {
     /**
      * pendingReviewCount - 待审核方案总数
      * recentlyEditedCount - 最近 7 天更新的方案总数
+     * totalCount - 方案总数
      * recentSchemeRows - 最近更新的最多 5 条方案
      */
-    const [pendingReviewCount, recentlyEditedCount, recentSchemeRows] =
-      await this.prisma.$transaction([
-        this.prisma.scheme.count({
-          where: { status: 'PENDING_REVIEW' },
-        }),
-        this.prisma.scheme.count({
-          where: { updatedAt: { gte: recentlyEditedSince } },
-        }),
-        this.prisma.scheme.findMany({
-          take: RECENT_SCHEME_LIMIT,
-          orderBy: { updatedAt: 'desc' },
-          select: schemeListItemSelect,
-        }),
-      ]);
+    const [
+      pendingReviewCount,
+      recentlyEditedCount,
+      totalCount,
+      recentSchemeRows,
+    ] = await this.prisma.$transaction([
+      this.prisma.scheme.count({
+        where: { status: 'PENDING_REVIEW' },
+      }),
+      this.prisma.scheme.count({
+        where: { updatedAt: { gte: recentlyEditedSince } },
+      }),
+      this.prisma.scheme.count(),
+      this.prisma.scheme.findMany({
+        take: RECENT_SCHEME_LIMIT,
+        orderBy: { updatedAt: 'desc' },
+        select: schemeListItemSelect,
+      }),
+    ]);
     return {
       user, // 用户由 AuthGuard 恢复，无需再查一次 users 表。
       permissions: getPermissionsForRole(user.role), // 用户角色生成权限
@@ -69,6 +75,7 @@ export class workbenchService {
       summary: {
         pendingReviewCount,
         recentlyEditedCount,
+        totalCount,
       },
       // 最近更新的方案列表
       recentSchemes: recentSchemeRows.map(toSchemeListItem),

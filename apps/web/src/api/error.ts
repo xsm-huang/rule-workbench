@@ -32,6 +32,11 @@ export const getApiErrorMessage = (error: unknown, fallbackMessaga: string): str
 }
 
 /** 判断一次请求是否因为认证失效而返回 401。 */
-export const isUnauthorizadError = (error: unknown): boolean => {
+export const isUnauthorizedError = (error: unknown): boolean => {
   return axios.isAxiosError(error) && error.response?.status === 401
+}
+
+/** 403无权限判断 */
+export const isForbiddenError = (error: unknown): boolean => {
+  return axios.isAxiosError(error) && error.response?.status === 403
 }

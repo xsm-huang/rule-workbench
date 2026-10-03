@@ -23,6 +23,7 @@ export interface WorkbenchBootstrap {
   summary: {
     pendingReviewCount: number; // 待审核方案的数量
     recentlyEditedCount: number; // 最近 7 天被更新过的方案数量
+    totalCount: number; // 方案总数
   };
   // 最近更新的方案列表
   recentSchemes: SchemeListItem[];

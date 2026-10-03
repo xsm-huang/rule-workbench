@@ -19,26 +19,41 @@
         <span class="page-title">方案工作台</span>
         <div class="user-actions">
           <span class="user-name">
-            {{ authStore.user?.displayName ?? '未知用户' }}
+            <!-- 同时显示用户和角色，方便验收三个账号。 -->
+            <span>
+              {{ bootstrap?.user.displayName }} ·
+              {{ bootstrap?.user.role }}
+            </span>
           </span>
-          <el-button link type="primary" :loading="loggingOut" @click="handleLogout"
-            >退出登录</el-button
-          >
+          <el-button link type="primary" :loading="loggingOut" @click="handleLogout">
+            退出登录
+          </el-button>
         </div>
       </header>
       <main class="content">
-        <RouterView />
+        <el-skeleton v-if="isPending" :rows="6" animated />
+        <!-- 403 -->
+        <ForbiddenState v-else-if="isForbiddin"></ForbiddenState>
+        <el-result v-else-if="isError" icon="error" title="工作台加载失败">
+          <template #extra>
+            <!-- refetch 重新执行相同的 bootstrap 查询。 -->
+            <el-button type="primary" @click="refetch()"> 重试 </el-button>
+          </template>
+        </el-result>
+        <RouterView v-else />
       </main>
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import { getApiErrorMessage } from '@/api/error'
+import { getApiErrorMessage, isForbiddenError } from '@/api/error'
+import { useWorkbenchBootstrap } from '@/queries/workbench'
 import { pinia } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
+import ForbiddenState from '@/components/ForbiddenState.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -61,6 +76,10 @@ const handleLogout = async (): Promise<void> => {
     loggingOut.value = false
   }
 }
+
+// 初始化获取数据
+const { data: bootstrap, isPending, isError, error, refetch } = useWorkbenchBootstrap()
+const isForbiddin = computed(() => isForbiddenError(error.value))
 </script>
 
 <style scoped lang="scss">
