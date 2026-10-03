@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import * as authApi from '@/api/auth'
 import { isUnauthorizedError } from '@/api/error'
+import { queryClient } from '@/queries/query-client'
 
 /**
  * unknown - 未知
@@ -82,9 +83,12 @@ export const useAuthStore = defineStore('auth', () => {
       if (!isUnauthorizedError(error)) {
         throw error
       }
-    }
+    } finally {
+      await queryClient.cancelQueries() // 停止还在请求的接口
+      queryClient.clear() // 清空缓存
 
-    clearSession()
+      clearSession()
+    }
   }
 
   return {

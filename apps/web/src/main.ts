@@ -3,8 +3,8 @@ import '@/styles/index.scss'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import { VueQueryPlugin } from '@tanstack/vue-query'
+import { queryClient } from '@/queries/query-client.ts'
 import { pinia } from '@/stores'
-
 import App from './App.vue'
 import router from './router'
 import { setUnauthorizedHandler } from './api/http.ts'
@@ -30,5 +30,5 @@ setUnauthorizedHandler(() => {
 
 app.use(router)
 app.use(ElementPlus)
-app.use(VueQueryPlugin)
+app.use(VueQueryPlugin, { queryClient }) // 全局使用同一个实例
 app.mount('#app')
