@@ -45,7 +45,7 @@ describe('AppController (e2e)', () => {
     agent = request.agent(app.getHttpServer());
     await agent.post('/api/auth/login').send({
       email: 'editor@example.com',
-      password: 'editor123',
+      password: 'Editor123',
     }).expect(200);
   });
 
