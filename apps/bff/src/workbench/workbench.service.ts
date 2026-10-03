@@ -20,7 +20,7 @@ const RECENT_WINDOW_DAYS = 7;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 @Injectable()
-export class workbenchService {
+export class WorkbenchService {
   // 注入 PrismaService。
   constructor(private readonly prisma: PrismaService) {}
 

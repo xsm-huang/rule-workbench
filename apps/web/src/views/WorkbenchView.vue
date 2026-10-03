@@ -33,7 +33,7 @@
       <main class="content">
         <el-skeleton v-if="isPending" :rows="6" animated />
         <!-- 403 -->
-        <ForbiddenState v-else-if="isForbiddin"></ForbiddenState>
+        <ForbiddenState v-else-if="isForbidden"></ForbiddenState>
         <el-result v-else-if="isError" icon="error" title="工作台加载失败">
           <template #extra>
             <!-- refetch 重新执行相同的 bootstrap 查询。 -->
@@ -79,7 +79,7 @@ const handleLogout = async (): Promise<void> => {
 
 // 初始化获取数据
 const { data: bootstrap, isPending, isError, error, refetch } = useWorkbenchBootstrap()
-const isForbiddin = computed(() => isForbiddenError(error.value))
+const isForbidden = computed(() => isForbiddenError(error.value))
 </script>
 
 <style scoped lang="scss">

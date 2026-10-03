@@ -6,7 +6,7 @@ import {
   type AuthUser,
 } from '@rule-workbench/contracts';
 import type { PrismaService } from '../prisma/prisma.service.js';
-import { workbenchService } from './workbench.service.js';
+import { WorkbenchService } from './workbench.service.js';
 
 const editorUser: AuthUser = {
   id: 'user-editor',
@@ -15,7 +15,7 @@ const editorUser: AuthUser = {
   role: USER_ROLES.EDITOR,
 };
 
-describe('workbenchService', () => {
+describe('WorkbenchService', () => {
   const count = vi.fn();
   const findMany = vi.fn();
   const transaction = vi.fn((operations: Promise<unknown>[]) =>
@@ -29,7 +29,7 @@ describe('workbenchService', () => {
     $transaction: transaction,
   } as unknown as PrismaService;
 
-  const service = new workbenchService(prisma);
+  const service = new WorkbenchService(prisma);
 
   beforeEach(() => {
     vi.useFakeTimers();

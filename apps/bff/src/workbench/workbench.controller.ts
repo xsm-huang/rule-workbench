@@ -1,11 +1,11 @@
 import { Controller, Get } from '@nestjs/common';
-import { workbenchService } from './workbench.service.js';
+import { WorkbenchService } from './workbench.service.js';
 import { CurrentUser } from '../common/auth/current-user.decorator.js';
 import { type AuthUser, WorkbenchBootstrap } from '@rule-workbench/contracts';
 
 @Controller('workbench')
 export class WorkbenchController {
-  constructor(private readonly workbenchService: workbenchService) {}
+  constructor(private readonly workbenchService: WorkbenchService) {}
 
   /** 工作台初始化接口 */
   @Get('bootstrap')
