@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import type { AuthUser } from '@rule-workbench/contracts'
+import {
+  WORKBENCH_PERMISSIONS,
+  type AuthSession,
+  type AuthUser,
+} from '@rule-workbench/contracts'
 
 import * as authApi from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
@@ -13,7 +17,7 @@ vi.mock('@/api/auth', () => ({
   // 复用真实 login 函数的参数与返回值类型。
   login: vi.fn<typeof authApi.login>(),
 
-  // 确保 Mock 必须返回 Promise<AuthUser>。
+  // 恢复会话时同样返回用户和权限。
   getCurrentUser: vi.fn<typeof authApi.getCurrentUser>(),
 
   // 确保 Mock 的退出结果与真实 API 保持一致。
@@ -29,6 +33,11 @@ const editorUser: AuthUser = {
   role: 'EDITOR',
 }
 
+const editorSession: AuthSession = {
+  user: editorUser,
+  permissions: [WORKBENCH_PERMISSIONS.SCHEME_CREATE, WORKBENCH_PERMISSIONS.SCHEME_EDIT],
+}
+
 describe('auth store', () => {
   beforeEach(() => {
     // 每个测试使用新的 Pinia，避免状态相互污染。
@@ -39,7 +48,7 @@ describe('auth store', () => {
   })
 
   it('登录成功后保存当前用户', async () => {
-    mockedAuthApi.login.mockResolvedValue(editorUser)
+    mockedAuthApi.login.mockResolvedValue(editorSession)
 
     const authStore = useAuthStore()
 
@@ -51,10 +60,13 @@ describe('auth store', () => {
     expect(authStore.user).toEqual(editorUser)
     expect(authStore.status).toBe('loggedIn')
     expect(authStore.isLoggedIn).toBe(true)
+    // 首次登录就应拿到权限，页面无需再次请求 /auth/me 才能显示创建入口。
+    expect(authStore.permissions).toEqual(editorSession.permissions)
+    expect(authStore.hasPermission(WORKBENCH_PERMISSIONS.SCHEME_CREATE)).toBe(true)
   })
 
   it('可以通过 /auth/me 恢复用户', async () => {
-    mockedAuthApi.getCurrentUser.mockResolvedValue(editorUser)
+    mockedAuthApi.getCurrentUser.mockResolvedValue(editorSession)
 
     const authStore = useAuthStore()
     const restored = await authStore.restoreSession()
@@ -62,6 +74,7 @@ describe('auth store', () => {
     expect(restored).toBe(true)
     expect(authStore.user).toEqual(editorUser)
     expect(authStore.status).toBe('loggedIn')
+    expect(authStore.permissions).toEqual(editorSession.permissions)
   })
 
   it('恢复用户失败后进入未登录状态', async () => {
@@ -76,7 +89,7 @@ describe('auth store', () => {
   })
 
   it('退出成功后清空当前用户', async () => {
-    mockedAuthApi.login.mockResolvedValue(editorUser)
+    mockedAuthApi.login.mockResolvedValue(editorSession)
     mockedAuthApi.logout.mockResolvedValue({
       loggedOut: true,
     })
@@ -93,5 +106,6 @@ describe('auth store', () => {
     expect(authStore.user).toBeNull()
     expect(authStore.status).toBe('loggedOut')
     expect(authStore.isLoggedIn).toBe(false)
+    expect(authStore.permissions).toEqual([])
   })
 })

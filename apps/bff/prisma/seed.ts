@@ -9,6 +9,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 // Prisma 客户端
 import { PrismaClient } from '../src/generated/prisma/client.js';
+import type { SchemeContent } from '@rule-workbench/contracts';
 
 // 从环境变量获取数据库连接字符串
 const databaseUrl = process.env.DATABASE_URL;

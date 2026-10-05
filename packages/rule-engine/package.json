@@ -1,0 +1,29 @@
+{
+  "name": "@rule-workbench/rule-engine",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@rule-workbench/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.11"
+  }
+}

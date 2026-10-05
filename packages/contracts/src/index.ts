@@ -14,6 +14,7 @@ export {
   type LoginInput,
   type AuthUser,
   type LogoutResult,
+  type AuthSession,
 } from "./user-info.js";
 
 export { type DictionaryOption, type WorkbenchBootstrap } from "./workbench.js";
@@ -32,3 +33,16 @@ export {
   type PageResult,
   type SchemeListResponse,
 } from "./scheme.js";
+
+export {
+  RULE_GROUP_KEYS,
+  ruleGroupKeySchema,
+  ruleRowSchema,
+  ruleGroupSchema,
+  schemeContentSchema,
+  type RuleGroupKey,
+  type RuleRow,
+  type RuleGroup,
+  type SchemeContent,
+  type ValidationIssue,
+} from "./rule.js";

@@ -22,7 +22,8 @@
     "pinia": "^4.0.3",
     "vue": "^3.5.42",
     "vue-router": "^5.3.1",
-    "@rule-workbench/contracts": "workspace:*"
+    "@rule-workbench/contracts": "workspace:*",
+    "@rule-workbench/rule-engine": "workspace:*"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.5",

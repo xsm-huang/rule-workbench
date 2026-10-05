@@ -1,5 +1,6 @@
 import { type INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { WORKBENCH_PERMISSIONS } from '@rule-workbench/contracts';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/configure-app.js';
@@ -82,13 +83,19 @@ describe('Auth (e2e)', () => {
       .expect(200);
 
     expect(loginResponse.body.data).toEqual({
-      id: 'user-editor',
-      email: 'editor@example.com',
-      displayName: '李编辑',
-      role: 'EDITOR',
+      user: {
+        id: 'user-editor',
+        email: 'editor@example.com',
+        displayName: '李编辑',
+        role: 'EDITOR',
+      },
+      permissions: [
+        WORKBENCH_PERMISSIONS.SCHEME_CREATE,
+        WORKBENCH_PERMISSIONS.SCHEME_EDIT,
+      ],
     });
     expect(loginResponse.body.data).not.toHaveProperty('token');
-    expect(loginResponse.body.data).not.toHaveProperty('passwordHash');
+    expect(loginResponse.body.data.user).not.toHaveProperty('passwordHash');
 
     const loginCookies = toHeaderValues(loginResponse.headers['set-cookie']);
 
@@ -98,6 +105,7 @@ describe('Auth (e2e)', () => {
 
     const meResponse = await agent.get('/api/auth/me').expect(200);
 
+    // 登录与会话恢复返回相同的权限，前端刷新后才能保持一致的操作入口。
     expect(meResponse.body.data).toEqual(loginResponse.body.data);
 
     const logoutResponse = await agent.post('/api/auth/logout').expect(200);

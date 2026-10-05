@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common'; //
 import { PrismaService } from '../prisma/prisma.service.js';
-import type { SchemeListResponseDto } from './dto/scheme-list.dto.js';
 import type { SchemeListQueryDto } from './dto/scheme-list-query.dto.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import {
   schemeListItemSelect,
   toSchemeListItem,
 } from './schemes-list.mapper.js';
+import type { SchemeListResponse } from '@rule-workbench/contracts';
 
 // 让 Nest 接管 SchemesService 的创建
 @Injectable()
 export class SchemesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: SchemeListQueryDto): Promise<SchemeListResponseDto> {
+  async findAll(query: SchemeListQueryDto): Promise<SchemeListResponse> {
     const {
       keyword,
       status,

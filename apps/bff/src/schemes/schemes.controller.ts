@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { SchemesService } from './schemes.service.js';
-import { SchemeListResponseDto } from './dto/scheme-list.dto.js';
 import { SchemeListQueryDto } from './dto/scheme-list-query.dto.js';
+import type { SchemeListResponse } from '@rule-workbench/contracts';
 
 @Controller('schemes')
 export class SchemesController {
@@ -10,7 +10,7 @@ export class SchemesController {
   @Get()
   getSchemesList(
     @Query() query: SchemeListQueryDto,
-  ): Promise<SchemeListResponseDto> {
+  ): Promise<SchemeListResponse> {
     return this.schemesService.findAll(query);
   }
 }

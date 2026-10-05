@@ -9,7 +9,12 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PricingMode, SchemeStatus } from '../../generated/prisma/client.js';
+import {
+  PRICING_MODES,
+  SCHEME_STATUSES,
+  type PricingMode,
+  type SchemeStatus,
+} from '@rule-workbench/contracts';
 
 export class SchemeListQueryDto {
   @IsOptional()
@@ -17,11 +22,11 @@ export class SchemeListQueryDto {
   keyword?: string;
 
   @IsOptional()
-  @IsEnum(SchemeStatus)
+  @IsEnum(SCHEME_STATUSES)
   status?: SchemeStatus;
 
   @IsOptional()
-  @IsEnum(PricingMode)
+  @IsEnum(PRICING_MODES)
   pricingMode?: PricingMode;
 
   @IsOptional()

@@ -7,7 +7,7 @@
       </div>
 
       <div class="head-actions">
-        <el-button v-if="canCreate" type="primary">新建方案</el-button>
+        <el-button v-if="canCreate" type="primary" @click="openNewScheme">新建方案</el-button>
       </div>
     </header>
     <!-- 统计 -->
@@ -296,6 +296,10 @@ const statusConfig: Record<SchemeStatus, { label: string; type: StatusTagType }>
 
 const getPricingModeLabel = (pricingMode: PricingMode): string => {
   return pricingModeMap[pricingMode]
+}
+
+const openNewScheme = (): void => {
+  router.push({ name: 'scheme-new' })
 }
 </script>
 

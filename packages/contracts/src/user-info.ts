@@ -1,3 +1,5 @@
+import type { WorkbenchPermission } from "./permissions.js";
+
 export const USER_ROLES = {
   VIEWER: "VIEWER",
   EDITOR: "EDITOR",
@@ -20,4 +22,9 @@ export interface AuthUser {
 
 export interface LogoutResult {
   loggedOut: true;
+}
+
+export interface AuthSession {
+  user: AuthUser;
+  permissions: WorkbenchPermission[];
 }

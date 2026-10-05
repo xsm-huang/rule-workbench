@@ -11,10 +11,15 @@ import { type CookieOptions, type Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { CurrentUser } from '../common/auth/current-user.decorator.js';
-import { type AuthUser, type LogoutResult } from '@rule-workbench/contracts';
+import {
+  type AuthUser,
+  type LogoutResult,
+  type AuthSession,
+} from '@rule-workbench/contracts';
 import { Public } from '../common/auth/public.decorator.js';
 import { AUTH_COOKIE_NAME } from '../common/auth/auth.constants.js';
 import { ConfigService } from '@nestjs/config';
+import { getPermissionsForRole } from '../common/auth/role-permissions.js';
 
 @Controller('auth')
 export class AuthController {
@@ -42,14 +47,14 @@ export class AuthController {
   async login(
     @Body() input: LoginDto,
     @Res({ passthrough: true }) response: Response, // 加 passthrough: true，只操作响应头/Cookie，仍希望 Nest 接管最终 JSON 响应
-  ): Promise<AuthUser> {
+  ): Promise<AuthSession> {
     const { user, token } = await this.authService.login(input);
     response.cookie(AUTH_COOKIE_NAME, token, {
       ...this.baseCookieOptions,
       maxAge: this.jwtExpiresInMilliseconds,
     });
 
-    return user;
+    return { user, permissions: getPermissionsForRole(user.role) };
   }
 
   @Post('logout')
@@ -60,7 +65,10 @@ export class AuthController {
   }
 
   @Get('me')
-  getCurrentUser(@CurrentUser() user: AuthUser): AuthUser {
-    return user;
+  getCurrentUser(@CurrentUser() user: AuthUser): AuthSession {
+    return {
+      user,
+      permissions: getPermissionsForRole(user.role),
+    };
   }
 }

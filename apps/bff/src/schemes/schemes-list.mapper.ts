@@ -1,4 +1,4 @@
-import { SchemeListItem } from '@rule-workbench/contracts';
+import type { SchemeListItem } from '@rule-workbench/contracts';
 import { Prisma } from '../generated/prisma/client.js';
 
 export const schemeListItemSelect = {
