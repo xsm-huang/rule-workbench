@@ -1,4 +1,8 @@
-import type { ApiResponse } from '@rule-workbench/contracts'
+import {
+  type CreateSchemeResult,
+  type ApiResponse,
+  type CreateSchemeInput,
+} from '@rule-workbench/contracts'
 import http from './http'
 
 export type SchemeStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED'
@@ -39,9 +43,25 @@ export interface PageResult<T> {
 export type SchemeListResponse = PageResult<SchemeListItem>
 
 export const getSchemeList = async (params: SchemeListQuery): Promise<SchemeListResponse> => {
-  const { data: response } = await http.get<ApiResponse<SchemeListResponse>>('/schemes', { params })
+  const { data: response } = await http.get<ApiResponse<SchemeListResponse>>(
+    '/schemes/getSchemeList',
+    { params },
+  )
   if (!response.success) {
     throw new Error(response.error.message)
   }
+  return response.data
+}
+
+export const createSchemeDraft = async (input: CreateSchemeInput): Promise<CreateSchemeResult> => {
+  const { data: response } = await http.post<ApiResponse<CreateSchemeResult>>(
+    '/schemes/createSchemeDraft',
+    input,
+  )
+
+  if (!response.success) {
+    throw new Error(response.error.message)
+  }
+
   return response.data
 }

@@ -3,25 +3,33 @@
 
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
-// 定义了数据模型后，生成可供 TypeScript 使用的 Prisma Client，运行 `npx prisma generate`。
+/**
+ * 定义了数据模型后，生成可供 TypeScript 使用的 Prisma Client，运行 `npx prisma generate`。
+ */
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
-// 名为 db 的数据源使用 PostgreSQL
+/**
+ * 名为 db 的数据源使用 PostgreSQL
+ */
 datasource db {
   provider = "postgresql"
 }
 
-// EDITOR-编辑， REVIEWER-审核， VIEWER-查看
+/**
+ * EDITOR-编辑， REVIEWER-审核， VIEWER-查看
+ */
 enum UserRole {
   EDITOR
   REVIEWER
   VIEWER
 }
 
-// DRAFT-草稿， PENDING_REVIEW-待审核， PUBLISHED-已发布， REJECTED-已驳回
+/**
+ * DRAFT-草稿， PENDING_REVIEW-待审核， PUBLISHED-已发布， REJECTED-已驳回
+ */
 enum SchemeStatus {
   DRAFT
   PENDING_REVIEW
@@ -29,21 +37,35 @@ enum SchemeStatus {
   REJECTED
 }
 
-// UNIT_PRICE-单价计价， TOTAL_POOL-总盘计价
+/**
+ * UNIT_PRICE-单价计价， TOTAL_POOL-总盘计价
+ */
 enum PricingMode {
   UNIT_PRICE
   TOTAL_POOL
 }
 
+/**
+ * 方案操作类型, CREATE-创建， SAVE-保存， SUBMIT-提交， APPROVE-审核通过， REJECT-审核驳回
+ */
+enum AuditAction {
+  CREATE
+  SAVE
+  SUBMIT
+  APPROVE
+  REJECT
+}
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  displayName  String   @map("display_name")
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  displayName  String     @map("display_name")
   role         UserRole
-  enabled      Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
+  enabled      Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @map("created_at")
   schemes      Scheme[]
+  auditLogs    AuditLog[] @relation("AuditActor")
 
   @@map("users")
 }
@@ -64,10 +86,28 @@ model Scheme {
   createdAt        DateTime     @default(now()) @map("created_at")
   updatedAt        DateTime     @updatedAt @map("updated_at")
   owner            User         @relation(fields: [ownerId], references: [id])
+  auditLogs        AuditLog[]
 
   @@index([status, updatedAt])
   @@index([ownerId])
   @@map("schemes")
+}
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  schemeId  String      @map("scheme_id")
+  actorId   String      @map("actor_id")
+  action    AuditAction
+  summary   String
+  requestId String      @map("request_id")
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  scheme Scheme @relation(fields: [schemeId], references: [id])
+  actor  User   @relation("AuditActor", fields: [actorId], references: [id])
+
+  // 按方案查看操作记录时，可按时间读取。
+  @@index([schemeId, createdAt])
+  @@map("audit_logs")
 }
 
 // model SchemeVersion {

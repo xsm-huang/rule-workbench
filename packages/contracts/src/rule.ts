@@ -28,7 +28,8 @@ export const ruleRowSchema = z.strictObject({
   timelinessFactor: z.number(),
   complexityFactor: z.number(),
   riskFactor: z.number(),
-  effectiveDate: z.string(),
+  // 草稿可以暂不选择；一旦填写，必须是真实的 YYYY-MM-DD 日期。
+  effectiveDate: z.union([z.literal(""), z.iso.date()]),
   enabled: z.boolean(),
   remark: z.string(),
 });
@@ -36,12 +37,23 @@ export const ruleRowSchema = z.strictObject({
 export const ruleGroupSchema = z.strictObject({
   key: ruleGroupKeySchema,
   name: z.string(),
-  rows: z.array(ruleRowSchema),
+  rows: z.array(ruleRowSchema).min(1),
 });
 
-export const schemeContentSchema = z.strictObject({
-  groups: z.array(ruleGroupSchema).length(4),
-});
+const ruleGroupCount = Object.keys(RULE_GROUP_KEYS).length;
+
+export const schemeContentSchema = z
+  .strictObject({
+    groups: z.array(ruleGroupSchema).length(ruleGroupCount),
+  })
+  .refine(
+    (content) =>
+      new Set(content.groups.map((group) => group.key)).size === ruleGroupCount,
+    {
+      path: ["groups"],
+      message: "四组规则类型不能重复",
+    },
+  );
 
 export type RuleGroupKey = z.infer<typeof ruleGroupKeySchema>;
 export type RuleRow = z.infer<typeof ruleRowSchema>;

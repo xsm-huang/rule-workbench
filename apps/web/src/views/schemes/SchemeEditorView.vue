@@ -2,9 +2,10 @@
   <div>
     <header>
       <h2>新建方案</h2>
+      <el-button type="primary" :loading="isPending" @click="saveDraft"> 保存草稿 </el-button>
     </header>
 
-    <el-form :model="model" :rules="rules" label-position="top" inline>
+    <el-form ref="formRef" :model="model" :rules="rules" label-position="top" inline>
       <el-form-item label="方案编号">
         <el-input model-value="保存后自动生成" disabled />
       </el-form-item>
@@ -97,11 +98,21 @@
 
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue'
-import type { FormRules } from 'element-plus'
-import { PRICING_MODES, RULE_GROUP_KEYS, type ValidationIssue } from '@rule-workbench/contracts'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useRouter } from 'vue-router'
+import {
+  PRICING_MODES,
+  RULE_GROUP_KEYS,
+  type CreateSchemeInput,
+  type ValidationIssue,
+} from '@rule-workbench/contracts'
 import { validateSchemeRules } from '@rule-workbench/rule-engine'
+import { createSchemeDraft } from '@/api/schemes'
+import { getApiErrorMessage } from '@/api/error'
 import RuleTable from './RuleTable.vue'
 import { createSchemeEditorModel } from './config/editor-model.ts'
+import { WORKBENCH_BOOTSTRAP_QUERY_KEY } from '@/queries/workbench'
 
 const model = reactive(createSchemeEditorModel())
 const activeGroupKey = ref(RULE_GROUP_KEYS.BASE)
@@ -129,6 +140,66 @@ const issues = computed(() => {
 })
 const checkRanges = (): void => {
   checkedRules.value = true
+}
+
+const formRef = ref<FormInstance>()
+const router = useRouter()
+const queryClient = useQueryClient()
+
+const { mutateAsync: createDraft, isPending } = useMutation({
+  mutationFn: createSchemeDraft,
+  onSuccess: async () => {
+    // 创建成功后，让列表和工作台统计读取最新的服务端数据。
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['schemes'] }),
+      queryClient.invalidateQueries({ queryKey: WORKBENCH_BOOTSTRAP_QUERY_KEY }),
+    ])
+  },
+})
+
+const saveDraft = async (): Promise<void> => {
+  if (!formRef.value || isPending.value) return
+
+  const isFormValid = await formRef.value.validate().catch(() => false)
+  if (!isFormValid || model.pricingMode === null) return
+
+  // 草稿允许规则暂未填完；显示错误，但不因此阻止保存。
+  checkedRules.value = true
+  const issueCount = issues.value.length
+
+  const inactiveField = model.pricingMode === PRICING_MODES.UNIT_PRICE ? 'totalAmount' : 'unitPrice'
+
+  const input: CreateSchemeInput = {
+    name: model.name.trim(),
+    scope: model.scope.trim(),
+    pricingMode: model.pricingMode,
+    effectiveDate: model.effectiveDate,
+    remark: model.remark.trim() || undefined,
+    content: {
+      groups: model.content.groups.map((group) => ({
+        ...group,
+        rows: group.rows.map((row) => ({
+          ...row,
+          // 只清理提交副本，不改页面数据；切回模式时仍能看到先前输入。
+          [inactiveField]: null,
+        })),
+      })),
+    },
+  }
+
+  try {
+    const result = await createDraft(input)
+    ElMessage.success(
+      issueCount > 0
+        ? `草稿 ${result.code} 已保存，尚有 ${issueCount} 处规则待完善`
+        : `草稿 ${result.code} 已保存`,
+    )
+  } catch (error) {
+    ElMessage.error(getApiErrorMessage(error, '保存草稿失败，请稍后重试'))
+    return
+  }
+
+  await router.replace({ name: 'schemes' })
 }
 
 const getIssueLabel = (issue: ValidationIssue): string => {
@@ -163,5 +234,11 @@ const locateIssue = async (issue: ValidationIssue): Promise<void> => {
 .issue-list {
   margin: 8px 0 0;
   padding-left: 20px;
+}
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 </style>

@@ -32,6 +32,9 @@ export {
   type SchemeListItem,
   type PageResult,
   type SchemeListResponse,
+  type CreateSchemeInput,
+  type CreateSchemeResult,
+  type SchemeDetail,
 } from "./scheme.js";
 
 export {
