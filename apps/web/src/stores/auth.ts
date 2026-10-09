@@ -1,9 +1,4 @@
-import type {
-  LoginInput,
-  AuthUser,
-  WorkbenchPermission,
-  AuthSession,
-} from '@rule-workbench/contracts'
+import type { LoginInput, AuthUser, WorkbenchPermission } from '@rule-workbench/contracts'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import * as authApi from '@/api/auth'

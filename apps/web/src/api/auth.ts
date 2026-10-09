@@ -1,11 +1,5 @@
 import http from './http'
-import type {
-  ApiResponse,
-  LoginInput,
-  AuthUser,
-  LogoutResult,
-  AuthSession,
-} from '@rule-workbench/contracts'
+import type { ApiResponse, LoginInput, LogoutResult, AuthSession } from '@rule-workbench/contracts'
 
 /** 从统一响应结构中取出真正的业务数据。 */
 const unwraoApiResponse = <T>(response: ApiResponse<T>): T => {

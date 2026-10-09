@@ -3,8 +3,6 @@ import { pinia } from '@/stores/index.ts'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { resolvePostLoginRedirect } from './auth-redirect.ts'
 import { WORKBENCH_PERMISSIONS, type WorkbenchPermission } from '@rule-workbench/contracts'
-import { AUTH_SESSION_QUERY_KEY, queryClient } from '@/queries/query-client.ts'
-import { getCurrentUser } from '@/api/auth.ts'
 
 /**
  * 扩展 Vue Router 的路由元信息类型。
