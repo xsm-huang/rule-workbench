@@ -8,8 +8,8 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from './../src/app.module.js';
-import { configureApp } from './configure-app.js';
-import { ApiException } from './common/request-id/exceptions/api.exceptions.js';
+import { configureApp } from '../src/configure-app.js';
+import { ApiException } from '../src/common/request-id/exceptions/api.exceptions.js';
 
 @Controller('__test/errors')
 class TestErrorsController {
@@ -43,10 +43,13 @@ describe('AppController (e2e)', () => {
     await app.init();
 
     agent = request.agent(app.getHttpServer());
-    await agent.post('/api/auth/login').send({
-      email: 'editor@example.com',
-      password: 'Editor123',
-    }).expect(200);
+    await agent
+      .post('/api/auth/login')
+      .send({
+        email: 'editor@example.com',
+        password: 'Editor123',
+      })
+      .expect(200);
   });
 
   it('/api/health (GET)', async () => {
@@ -69,12 +72,8 @@ describe('AppController (e2e)', () => {
   });
 
   it('assigns a unique request ID to each request', async () => {
-    const firstResponse = await agent
-      .get('/api/health')
-      .expect(200);
-    const secondResponse = await agent
-      .get('/api/health')
-      .expect(200);
+    const firstResponse = await agent.get('/api/health').expect(200);
+    const secondResponse = await agent.get('/api/health').expect(200);
 
     const firstRequestId = firstResponse.headers['x-request-id'];
     const secondRequestId = secondResponse.headers['x-request-id'];
@@ -86,9 +85,9 @@ describe('AppController (e2e)', () => {
     expect(firstRequestId).not.toBe(secondRequestId);
   });
 
-  it('/api/schemes (GET)', async () => {
+  it('/api/schemes/getSchemeList (GET)', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .expect(200)
       .expect('Content-Type', /json/);
 
@@ -128,9 +127,9 @@ describe('AppController (e2e)', () => {
     }
   });
 
-  it('/api/schemes?page=1&pageSize=2 (GET)', async () => {
+  it('/api/schemes/getSchemeList?page=1&pageSize=2 (GET)', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ page: 1, pageSize: 2 })
       .expect(200);
 
@@ -143,9 +142,9 @@ describe('AppController (e2e)', () => {
     expect(response.body.data.items).toHaveLength(2);
   });
 
-  it('/api/schemes?status=DRAFT (GET)', async () => {
+  it('/api/schemes/getSchemeList?status=DRAFT (GET)', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ status: 'DRAFT' })
       .expect(200);
 
@@ -159,7 +158,7 @@ describe('AppController (e2e)', () => {
 
   it('filters schemes by pricing mode', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ pricingMode: 'UNIT_PRICE' })
       .expect(200);
 
@@ -174,7 +173,7 @@ describe('AppController (e2e)', () => {
 
   it('filters schemes by owner', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ ownerId: 'user-editor' })
       .expect(200);
 
@@ -184,7 +183,7 @@ describe('AppController (e2e)', () => {
 
   it('filters schemes by keyword', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ keyword: 'SC2026002' })
       .expect(200);
 
@@ -194,7 +193,7 @@ describe('AppController (e2e)', () => {
 
   it('filters schemes by updatedAt range', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ updatedTo: '2000-01-01T00:00:00.000Z' })
       .expect(200);
 
@@ -204,12 +203,12 @@ describe('AppController (e2e)', () => {
 
   it('sorts schemes by updatedAt ascending', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ sort: 'updatedAt:asc' })
       .expect(200);
 
-    const times = response.body.data.items.map(
-      (item: { updatedAt: string }) => new Date(item.updatedAt).getTime(),
+    const times = response.body.data.items.map((item: { updatedAt: string }) =>
+      new Date(item.updatedAt).getTime(),
     );
 
     for (let index = 1; index < times.length; index += 1) {
@@ -219,12 +218,12 @@ describe('AppController (e2e)', () => {
 
   it('sorts schemes by updatedAt descending', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ sort: 'updatedAt:desc' })
       .expect(200);
 
-    const times = response.body.data.items.map(
-      (item: { updatedAt: string }) => new Date(item.updatedAt).getTime(),
+    const times = response.body.data.items.map((item: { updatedAt: string }) =>
+      new Date(item.updatedAt).getTime(),
     );
 
     for (let index = 1; index < times.length; index += 1) {
@@ -234,7 +233,7 @@ describe('AppController (e2e)', () => {
 
   it('rejects an invalid pageSize', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ pageSize: 1000 })
       .expect(400);
 
@@ -257,7 +256,7 @@ describe('AppController (e2e)', () => {
 
   it('rejects an invalid page number', async () => {
     const response = await agent
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .query({ page: 0 })
       .expect(400);
 
@@ -279,9 +278,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('returns a structured business error', async () => {
-    const response = await agent
-      .get('/api/__test/errors/business')
-      .expect(409);
+    const response = await agent.get('/api/__test/errors/business').expect(409);
 
     expect(response.body).toEqual({
       success: false,
@@ -315,9 +312,7 @@ describe('AppController (e2e)', () => {
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
 
-    const response = await agent
-      .get('/api/__test/errors/system')
-      .expect(500);
+    const response = await agent.get('/api/__test/errors/system').expect(500);
 
     expect(response.body).toEqual({
       success: false,

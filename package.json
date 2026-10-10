@@ -10,8 +10,14 @@
     "dev:bff": "pnpm --filter @rule-workbench/bff start:dev",
     "build": "pnpm -r --if-present run build",
     "lint": "pnpm -r --if-present run lint",
-    "typecheck": "pnpm --filter @rule-workbench/contracts typecheck && pnpm --filter @rule-workbench/web type-check && pnpm --filter @rule-workbench/bff exec tsc --noEmit",
-    "check": "pnpm lint && pnpm typecheck && pnpm build"
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test:unit": "pnpm -r --if-present run test:unit",
+    "test:e2e": "pnpm --filter @rule-workbench/bff test:e2e",
+    "prisma:generate": "pnpm --filter @rule-workbench/bff prisma:generate",
+    "db:migrate:deploy": "pnpm --filter @rule-workbench/bff db:migrate:deploy",
+    "db:seed": "pnpm --filter @rule-workbench/bff db:seed",
+    "check:static": "pnpm lint && pnpm typecheck && pnpm test:unit",
+    "check": "pnpm check:static && pnpm build"
   },
   "engines": {
     "node": ">=24.15.0",

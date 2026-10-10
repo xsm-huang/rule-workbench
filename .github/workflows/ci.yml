@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: quality-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: true
+      NODE_ENV: test
+      WEB_ORIGIN: http://localhost:5173
+      DATABASE_URL: postgresql://rule_user:rule_password@localhost:5432/rule_workbench?schema=public
+      JWT_SECRET: "ci-only-secret-ci-only-secret-123456"
+      JWT_EXPIRES_IN_SECONDS: "7200"
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: rule_workbench
+          POSTGRES_USER: rule_user
+          POSTGRES_PASSWORD: rule_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rule_user -d rule_workbench"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm prisma:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Unit and component tests
+        run: pnpm test:unit
+
+      - name: Apply database migrations
+        run: pnpm db:migrate:deploy
+
+      - name: Seed test database
+        run: pnpm db:seed
+
+      - name: API tests
+        run: pnpm test:e2e
+
+      - name: Build Web and BFF
+        run: pnpm build

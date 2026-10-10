@@ -32,7 +32,7 @@ describe('Auth (e2e)', () => {
 
   it('rejects unauthenticated scheme requests', async () => {
     const response = await request(app.getHttpServer())
-      .get('/api/schemes')
+      .get('/api/schemes/getSchemeList')
       .expect(401);
 
     expect(response.body).toMatchObject({
