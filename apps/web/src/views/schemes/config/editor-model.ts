@@ -1,4 +1,5 @@
 import {
+  PRICING_MODES,
   RULE_GROUP_KEYS,
   type PricingMode,
   type SchemeContent,
@@ -45,7 +46,7 @@ export function createSchemeEditorModel(): SchemeEditorModel {
   return {
     name: '',
     scope: '',
-    pricingMode: null,
+    pricingMode: PRICING_MODES.UNIT_PRICE,
     effectiveDate: '',
     remark: '',
     content: {
