@@ -12,6 +12,7 @@ import { PrismaClient } from '../src/generated/prisma/client.js';
 import {
   PRICING_MODES,
   RULE_GROUP_DEFINITIONS,
+  schemeContentSchema,
   type PricingMode,
   type SchemeContent,
 } from '@rule-workbench/contracts';
@@ -67,7 +68,7 @@ function createSeedContent(
   schemeId: string,
   pricingMode: PricingMode,
 ): SchemeContent {
-  return {
+  return schemeContentSchema.parse({
     groups: RULE_GROUP_DEFINITIONS.map((group) => ({
       key: group.key,
       name: group.name,
@@ -88,7 +89,7 @@ function createSeedContent(
         },
       ],
     })),
-  };
+  });
 }
 
 const schemes = [
