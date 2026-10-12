@@ -66,7 +66,7 @@
           <el-form-item label="计价模式" prop="pricingMode">
             <el-radio-group v-model="model.pricingMode" class="pricing-options">
               <span class="pricing-choice">
-                <el-radio :value="PRICING_MODES.UNIT_PRICE">单价计价</el-radio>
+                <el-radio :value="PRICING_MODES.UNIT_PRICE">{{ PRICING_MODE_LABELS.UNIT_PRICE }}</el-radio>
                 <el-tooltip content="按区间设置单价，结合系数计算" placement="top">
                   <span
                     class="pricing-help"
@@ -77,7 +77,7 @@
                 </el-tooltip>
               </span>
               <span class="pricing-choice">
-                <el-radio :value="PRICING_MODES.TOTAL_POOL">总盘计价</el-radio>
+                <el-radio :value="PRICING_MODES.TOTAL_POOL">{{ PRICING_MODE_LABELS.TOTAL_POOL }}</el-radio>
                 <el-tooltip content="按区间设置总盘金额，结合系数计算" placement="top">
                   <span
                     class="pricing-help"
@@ -169,6 +169,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import {
   PRICING_MODES,
+  PRICING_MODE_LABELS,
   RULE_GROUP_KEYS,
   type CreateSchemeInput,
   type ValidationIssue,

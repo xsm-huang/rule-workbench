@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import {
   AuthUser,
   PRICING_MODES,
+  PRICING_MODE_LABELS,
+  SCHEME_STATUS_LABELS,
   SCHEME_STATUSES,
   WorkbenchBootstrap,
 } from '@rule-workbench/contracts';
@@ -61,14 +63,14 @@ export class WorkbenchService {
       // 页面使用的枚举字典
       dictionaries: {
         schemeStatuses: [
-          { label: '草稿', value: SCHEME_STATUSES.DRAFT },
-          { label: '待审核', value: SCHEME_STATUSES.PENDING_REVIEW },
-          { label: '已发布', value: SCHEME_STATUSES.PUBLISHED },
-          { label: '已驳回', value: SCHEME_STATUSES.REJECTED },
+          { label: SCHEME_STATUS_LABELS.DRAFT, value: SCHEME_STATUSES.DRAFT },
+          { label: SCHEME_STATUS_LABELS.PENDING_REVIEW, value: SCHEME_STATUSES.PENDING_REVIEW },
+          { label: SCHEME_STATUS_LABELS.PUBLISHED, value: SCHEME_STATUSES.PUBLISHED },
+          { label: SCHEME_STATUS_LABELS.REJECTED, value: SCHEME_STATUSES.REJECTED },
         ],
         pricingModes: [
-          { label: '单价', value: PRICING_MODES.UNIT_PRICE },
-          { label: '总池', value: PRICING_MODES.TOTAL_POOL },
+          { label: PRICING_MODE_LABELS.UNIT_PRICE, value: PRICING_MODES.UNIT_PRICE },
+          { label: PRICING_MODE_LABELS.TOTAL_POOL, value: PRICING_MODES.TOTAL_POOL },
         ],
       },
       // 工作台顶部展示的统计摘要

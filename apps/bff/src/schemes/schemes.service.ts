@@ -7,11 +7,13 @@ import {
   toSchemeListItem,
 } from './schemes-list.mapper.js';
 import type {
-  SchemeListResponse,
-  SchemeContent,
-  PricingMode,
-  SchemeDetail,
   AuthUser,
+  PricingMode,
+  SchemeContent,
+  SchemeDetail,
+  SchemeDetailPermissions,
+  SchemeListResponse,
+  SchemeStatus,
 } from '@rule-workbench/contracts';
 import { CreateSchemeDto } from './dto/create-scheme.dto.js';
 import {
@@ -44,6 +46,7 @@ export class SchemesService {
         status: true,
         content: true,
         editVersion: true,
+        currentVersionNo: true,
         updatedAt: true,
         owner: {
           select: {
@@ -78,12 +81,11 @@ export class SchemesService {
      *
      * 待审核或已发布的方案不能直接修改，避免审核中的内容发生变化。
      */
-    const canEdit =
-      user.role === USER_ROLES.EDITOR &&
-      scheme.owner.id === user.id &&
-      (scheme.status === SCHEME_STATUSES.DRAFT ||
-        scheme.status === SCHEME_STATUSES.REJECTED);
-
+    const permissions = resolveSchemeDetailPermissions({
+      user,
+      ownerId: scheme.owner.id,
+      status: scheme.status,
+    });
     return {
       id: scheme.id,
       code: scheme.code,
@@ -94,11 +96,15 @@ export class SchemesService {
       effectiveDate: scheme.effectiveDate.toISOString().slice(0, 10),
       remark: scheme.remark ?? '',
       status: scheme.status,
-      // owner: scheme.owner,
+      owner: {
+        id: scheme.owner.id,
+        displayName: scheme.owner.displayName,
+      },
       content: parsedContent.data,
       editVersion: scheme.editVersion,
-      // updatedAt: scheme.updatedAt.toISOString(),
-      canEdit: canEdit,
+      currentVersionNo: scheme.currentVersionNo,
+      updatedAt: scheme.updatedAt.toISOString(),
+      permissions,
     };
   }
 
@@ -228,6 +234,33 @@ export class SchemesService {
       updatedAt: scheme.updatedAt.toISOString(),
     };
   }
+}
+interface SchemePermissionContext {
+  user: AuthUser;
+  ownerId: string;
+  status: SchemeStatus;
+}
+/** 根据角色、资源归属和方案状态计算操作权限。 */
+function resolveSchemeDetailPermissions({
+  user,
+  ownerId,
+  status,
+}: SchemePermissionContext): SchemeDetailPermissions {
+  const isEditorOwner = user.role === USER_ROLES.EDITOR && user.id === ownerId;
+  const isEditableStatus =
+    status === SCHEME_STATUSES.DRAFT || status === SCHEME_STATUSES.REJECTED;
+  return {
+    // 被驳回的方案允许修改，首次保存后再恢复为草稿状态。
+    canEdit: isEditorOwner && isEditableStatus,
+
+    // 被驳回方案需要先保存为草稿，因此不能直接提交。
+    canSubmit: isEditorOwner && status === SCHEME_STATUSES.DRAFT,
+
+    // Reviewer 可以审核处于待审核状态的方案。
+    canReview:
+      user.role === USER_ROLES.REVIEWER &&
+      status === SCHEME_STATUSES.PENDING_REVIEW,
+  };
 }
 
 /** 根据计价模式清除当前不会生效的金额字段。 */

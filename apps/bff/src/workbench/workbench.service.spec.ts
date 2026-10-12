@@ -74,8 +74,8 @@ describe('WorkbenchService', () => {
           { label: '已驳回', value: SCHEME_STATUSES.REJECTED },
         ],
         pricingModes: [
-          { label: '单价', value: PRICING_MODES.UNIT_PRICE },
-          { label: '总池', value: PRICING_MODES.TOTAL_POOL },
+          { label: '单价计价', value: PRICING_MODES.UNIT_PRICE },
+          { label: '总盘计价', value: PRICING_MODES.TOTAL_POOL },
         ],
       },
       summary: {

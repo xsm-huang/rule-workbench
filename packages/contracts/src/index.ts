@@ -26,6 +26,8 @@ export {
 
 export {
   SCHEME_STATUSES,
+  SCHEME_STATUS_LABELS,
+  PRICING_MODE_LABELS,
   type SchemeStatus,
   PRICING_MODES,
   type PricingMode,
@@ -34,6 +36,8 @@ export {
   type SchemeListResponse,
   type CreateSchemeInput,
   type CreateSchemeResult,
+  type SchemeOwnerSummary,
+  type SchemeDetailPermissions,
   type SchemeDetail,
 } from "./scheme.js";
 
@@ -43,6 +47,7 @@ export {
   ruleRowSchema,
   ruleGroupSchema,
   schemeContentSchema,
+  RULE_GROUP_DEFINITIONS,
   type RuleGroupKey,
   type RuleRow,
   type RuleGroup,
