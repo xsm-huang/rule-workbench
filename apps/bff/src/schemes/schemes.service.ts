@@ -14,8 +14,10 @@ import type {
   SchemeDetailPermissions,
   SchemeListResponse,
   SchemeStatus,
+  SaveDraftResult,
 } from '@rule-workbench/contracts';
 import { CreateSchemeDto } from './dto/create-scheme.dto.js';
+import type { SaveSchemeDraftDto } from './dto/save-scheme-draft.dto.js';
 import {
   COMMON_API_ERROR_CODES,
   CreateSchemeResult,
@@ -166,6 +168,118 @@ export class SchemesService {
       total,
       totalPages: Math.ceil(total / pageSize),
     };
+  }
+
+  async saveDraft(
+    id: string,
+    input: SaveSchemeDraftDto,
+    user: AuthUser,
+    requestId: string,
+  ): Promise<SaveDraftResult> {
+    if (user.role !== USER_ROLES.EDITOR) {
+      throw new ApiException({
+        status: HttpStatus.FORBIDDEN,
+        code: COMMON_API_ERROR_CODES.FORBIDDEN,
+        message: '只有编辑者可以保存草稿',
+      });
+    }
+
+    const parsed = schemeContentSchema.safeParse(input.content);
+    if (!parsed.success) {
+      throw new ApiException({
+        status: HttpStatus.UNPROCESSABLE_ENTITY,
+        code: COMMON_API_ERROR_CODES.VALIDATION_FAILED,
+        message: '规则内容结构不正确',
+        fieldErrors: parsed.error.issues.map((issue) => ({
+          path: ['content', ...issue.path].join('.'),
+          message: issue.message,
+        })),
+      });
+    }
+    const content = normalizeAmounts(parsed.data, input.pricingMode);
+
+    return this.prisma.$transaction(async (transaction) => {
+      const scheme = await transaction.scheme.findUnique({
+        where: { id },
+        select: { ownerId: true, status: true, editVersion: true },
+      });
+      if (!scheme) {
+        throw new ApiException({
+          status: HttpStatus.NOT_FOUND,
+          code: COMMON_API_ERROR_CODES.NOT_FOUND,
+          message: '方案不存在',
+        });
+      }
+      if (scheme.ownerId !== user.id) {
+        throw new ApiException({
+          status: HttpStatus.FORBIDDEN,
+          code: COMMON_API_ERROR_CODES.FORBIDDEN,
+          message: '只能保存自己负责的方案',
+        });
+      }
+      if (
+        scheme.status !== SCHEME_STATUSES.DRAFT &&
+        scheme.status !== SCHEME_STATUSES.REJECTED
+      ) {
+        throw new ApiException({
+          status: HttpStatus.CONFLICT,
+          code: COMMON_API_ERROR_CODES.CONFLICT,
+          message: '当前方案状态不允许保存草稿',
+        });
+      }
+      if (scheme.editVersion !== input.baseVersion) {
+        throw new ApiException({
+          status: HttpStatus.CONFLICT,
+          code: COMMON_API_ERROR_CODES.CONFLICT,
+          message: '方案已被其他页面更新，当前修改未保存',
+        });
+      }
+
+      // 条件更新防止查询后发生并发修改；返回数据库实际写入的版本和时间。
+      const [saved] = await transaction.scheme.updateManyAndReturn({
+        where: {
+          id,
+          ownerId: user.id,
+          status: scheme.status,
+          editVersion: input.baseVersion,
+        },
+        data: {
+          name: input.name,
+          scope: input.scope,
+          pricingMode: input.pricingMode,
+          effectiveDate: new Date(`${input.effectiveDate}T00:00:00.000Z`),
+          remark: input.remark ?? null,
+          content: content as Prisma.InputJsonValue,
+          status: SCHEME_STATUSES.DRAFT,
+          editVersion: { increment: 1 },
+        },
+        select: { id: true, editVersion: true, updatedAt: true },
+      });
+      if (!saved) {
+        throw new ApiException({
+          status: HttpStatus.CONFLICT,
+          code: COMMON_API_ERROR_CODES.CONFLICT,
+          message: '方案已发生变化，当前修改未保存',
+        });
+      }
+
+      await transaction.auditLog.create({
+        data: {
+          schemeId: saved.id,
+          actorId: user.id,
+          action: 'SAVE',
+          summary: '保存方案草稿',
+          requestId,
+        },
+      });
+
+      return {
+        id: saved.id,
+        status: SCHEME_STATUSES.DRAFT,
+        editVersion: saved.editVersion,
+        updatedAt: saved.updatedAt.toISOString(),
+      };
+    });
   }
 
   async createDraft(

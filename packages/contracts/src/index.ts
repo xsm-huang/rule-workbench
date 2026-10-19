@@ -36,6 +36,8 @@ export {
   type SchemeListResponse,
   type CreateSchemeInput,
   type CreateSchemeResult,
+  type SaveDraftInput,
+  type SaveDraftResult,
   type SchemeOwnerSummary,
   type SchemeDetailPermissions,
   type SchemeDetail,

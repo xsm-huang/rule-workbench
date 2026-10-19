@@ -14,7 +14,12 @@
         </p>
       </div>
 
-      <el-button @click="backToList"> 返回列表 </el-button>
+      <div class="header-actions">
+        <el-button v-if="scheme?.permissions.canEdit" type="primary" @click="editScheme">
+          编辑
+        </el-button>
+        <el-button @click="backToList"> 返回列表 </el-button>
+      </div>
     </header>
 
     <!-- 首次请求尚未得到数据时展示加载状态。 -->
@@ -203,6 +208,13 @@ const retry = (): void => {
   void refetch()
 }
 
+/** 操作权限由服务端按角色、负责人和方案状态计算。 */
+const editScheme = (): void => {
+  if (!scheme.value?.permissions.canEdit) return
+
+  void router.push({ name: 'scheme-edit', params: { id: scheme.value.id } })
+}
+
 /** 明确返回列表，避免直接进入详情页时 history.back() 去向不确定。 */
 const backToList = (): void => {
   void router.push({ name: 'schemes' })
@@ -239,6 +251,11 @@ const backToList = (): void => {
   a:hover {
     color: var(--el-color-primary);
   }
+}
+
+.header-actions {
+  display: flex;
+  flex-shrink: 0;
 }
 
 .page-description {

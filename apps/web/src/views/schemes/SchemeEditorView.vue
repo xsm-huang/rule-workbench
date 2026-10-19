@@ -5,18 +5,36 @@
         <nav class="breadcrumb" aria-label="页面位置">
           <router-link :to="{ name: 'schemes' }">方案管理</router-link>
           <span aria-hidden="true">/</span>
-          <span aria-current="page">新建草稿方案</span>
+          <span aria-current="page">{{ pageTitle }}</span>
         </nav>
         <div class="title-line">
-          <h1>新建草稿方案</h1>
-          <el-tag type="info" effect="plain" round>未保存</el-tag>
+          <h1>{{ pageTitle }}</h1>
+          <el-tag
+            v-if="initialScheme"
+            :type="SCHEME_STATUS_CONFIG[initialScheme.status].type"
+            effect="plain"
+            round
+          >
+            {{ SCHEME_STATUS_CONFIG[initialScheme.status].label }}
+          </el-tag>
+          <el-tag v-else type="info" effect="plain" round>未保存</el-tag>
         </div>
-        <p>填写方案信息并配置规则，完成后保存为草稿。</p>
+        <p>{{ isEditing ? '调整方案信息和规则配置。' : '填写方案信息并配置规则，完成后保存为草稿。' }}</p>
       </div>
-      <el-button type="primary" size="large" :loading="isPending" @click="saveDraft">
+      <el-button v-if="isEditing" size="large" @click="backToDetail">返回详情</el-button>
+      <el-button v-else type="primary" size="large" :loading="isPending" @click="saveDraft">
         保存草稿
       </el-button>
     </header>
+
+    <el-alert
+      v-if="isEditing"
+      class="edit-notice"
+      type="info"
+      title="当前修改仅在本页保留，离开或刷新后不会保存。"
+      :closable="false"
+      show-icon
+    />
 
     <section class="editor-card basic-card" aria-labelledby="basic-info-title">
       <div class="section-heading">
@@ -37,7 +55,7 @@
       >
         <div class="form-grid">
           <el-form-item label="方案编号">
-            <el-input model-value="保存后自动生成" disabled />
+            <el-input :model-value="initialScheme?.code ?? '保存后自动生成'" disabled />
           </el-form-item>
           <el-form-item label="方案名称" prop="name">
             <el-input
@@ -172,16 +190,26 @@ import {
   PRICING_MODE_LABELS,
   RULE_GROUP_KEYS,
   type CreateSchemeInput,
+  type SchemeDetail,
   type ValidationIssue,
 } from '@rule-workbench/contracts'
 import { validateSchemeRules } from '@rule-workbench/rule-engine'
 import { createSchemeDraft } from '@/api/schemes'
 import { getApiErrorMessage } from '@/api/error'
 import RuleTable from './RuleTable.vue'
-import { createSchemeEditorModel } from './config/editor-model.ts'
+import { createSchemeEditorModel, toSchemeEditorModel } from './config/editor-model.ts'
+import { SCHEME_STATUS_CONFIG } from './config/scheme-display'
 import { WORKBENCH_BOOTSTRAP_QUERY_KEY } from '@/queries/workbench'
 
-const model = reactive(createSchemeEditorModel())
+const props = defineProps<{ initialScheme?: SchemeDetail }>()
+
+// 每次进入方案时只回填一次；后台重新获取详情时不能覆盖正在输入的内容。
+const initialScheme = props.initialScheme
+const isEditing = Boolean(initialScheme)
+const pageTitle = isEditing ? '编辑草稿方案' : '新建草稿方案'
+const model = reactive(
+  initialScheme ? toSchemeEditorModel(initialScheme) : createSchemeEditorModel(),
+)
 const activeGroupKey = ref(RULE_GROUP_KEYS.BASE)
 const checkedRules = ref(false)
 
@@ -213,6 +241,12 @@ const formRef = ref<FormInstance>()
 const router = useRouter()
 const queryClient = useQueryClient()
 
+const backToDetail = (): void => {
+  if (initialScheme) {
+    void router.push({ name: 'scheme-detail', params: { id: initialScheme.id } })
+  }
+}
+
 const { mutateAsync: createDraft, isPending } = useMutation({
   mutationFn: createSchemeDraft,
   onSuccess: async () => {
@@ -225,7 +259,8 @@ const { mutateAsync: createDraft, isPending } = useMutation({
 })
 
 const saveDraft = async (): Promise<void> => {
-  if (!formRef.value || isPending.value) return
+  // 已有草稿的更新保存由单独接口处理，不能调用创建接口生成重复方案。
+  if (isEditing || !formRef.value || isPending.value) return
 
   const isFormValid = await formRef.value.validate().catch(() => false)
   if (!isFormValid || model.pricingMode === null) return
@@ -295,6 +330,10 @@ const locateIssue = async (issue: ValidationIssue): Promise<void> => {
   max-width: 1560px;
   margin: 0 auto;
   color: #263247;
+}
+
+.edit-notice {
+  margin-bottom: 20px;
 }
 
 .editor-header {

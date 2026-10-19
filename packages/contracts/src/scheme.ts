@@ -53,6 +53,19 @@ export interface CreateSchemeInput {
   content: SchemeContent;
 }
 
+/** 保存已有草稿；版本号使用加载详情或上次保存成功时的 editVersion。 */
+export interface SaveDraftInput extends CreateSchemeInput {
+  baseVersion: number;
+}
+
+/** 保存成功后返回新的编辑版本，用于下一次保存。 */
+export interface SaveDraftResult {
+  id: string;
+  status: typeof SCHEME_STATUSES.DRAFT;
+  editVersion: number;
+  updatedAt: string;
+}
+
 /** 详情页展示的负责人摘要，不直接暴露完整用户模型。 */
 export interface SchemeOwnerSummary {
   id: string;
