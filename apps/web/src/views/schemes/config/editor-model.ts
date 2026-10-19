@@ -1,7 +1,9 @@
 import {
+  PRICING_MODES,
   RULE_GROUP_KEYS,
   type PricingMode,
   type SchemeContent,
+  type SchemeDetail,
   type RuleRow,
 } from '@rule-workbench/contracts'
 
@@ -45,7 +47,7 @@ export function createSchemeEditorModel(): SchemeEditorModel {
   return {
     name: '',
     scope: '',
-    pricingMode: null,
+    pricingMode: PRICING_MODES.UNIT_PRICE,
     effectiveDate: '',
     remark: '',
     content: {
@@ -53,6 +55,24 @@ export function createSchemeEditorModel(): SchemeEditorModel {
         key: group.key,
         name: group.name,
         rows: [createRuleRow()],
+      })),
+    },
+  }
+}
+
+/** 将详情 DTO 转为独立的表单数据，避免编辑时修改详情查询缓存。 */
+export function toSchemeEditorModel(detail: SchemeDetail): SchemeEditorModel {
+  return {
+    name: detail.name,
+    scope: detail.scope,
+    pricingMode: detail.pricingMode,
+    effectiveDate: detail.effectiveDate,
+    remark: detail.remark,
+    content: {
+      groups: detail.content.groups.map((group) => ({
+        ...group,
+        // 分组、行数组和每条规则行都需要复制；规则行中的字段均为基本类型。
+        rows: group.rows.map((row) => ({ ...row })),
       })),
     },
   }

@@ -107,8 +107,8 @@ describe('Workbench and roles (e2e)', () => {
             { label: '已驳回', value: 'REJECTED' },
           ],
           pricingModes: [
-            { label: '单价', value: 'UNIT_PRICE' },
-            { label: '总池', value: 'TOTAL_POOL' },
+            { label: '单价计价', value: 'UNIT_PRICE' },
+            { label: '总盘计价', value: 'TOTAL_POOL' },
           ],
         },
         summary: {

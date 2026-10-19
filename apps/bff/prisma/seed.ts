@@ -9,7 +9,13 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 // Prisma 客户端
 import { PrismaClient } from '../src/generated/prisma/client.js';
-import type { SchemeContent } from '@rule-workbench/contracts';
+import {
+  PRICING_MODES,
+  RULE_GROUP_DEFINITIONS,
+  schemeContentSchema,
+  type PricingMode,
+  type SchemeContent,
+} from '@rule-workbench/contracts';
 
 // 从环境变量获取数据库连接字符串
 const databaseUrl = process.env.DATABASE_URL;
@@ -58,21 +64,46 @@ const users = [
   },
 ];
 
+function createSeedContent(
+  schemeId: string,
+  pricingMode: PricingMode,
+): SchemeContent {
+  return schemeContentSchema.parse({
+    groups: RULE_GROUP_DEFINITIONS.map((group) => ({
+      key: group.key,
+      name: group.name,
+      rows: [
+        {
+          id: `${schemeId}-${group.key.toLowerCase()}-1`,
+          rangeStart: 0,
+          rangeEnd: 100,
+          unitPrice: pricingMode === PRICING_MODES.UNIT_PRICE ? 12.5 : null,
+          totalAmount: pricingMode === PRICING_MODES.TOTAL_POOL ? 50000 : null,
+          qualityFactor: 1,
+          timelinessFactor: 1,
+          complexityFactor: 1,
+          riskFactor: 1,
+          effectiveDate: '2026-10-01',
+          enabled: true,
+          remark: '',
+        },
+      ],
+    })),
+  });
+}
+
 const schemes = [
   {
     id: 'scheme-001',
     code: 'SC2026001',
     name: '华东区域销售方案',
     scope: '华东区域',
-    pricingMode: 'UNIT_PRICE' as const,
+    pricingMode: PRICING_MODES.UNIT_PRICE,
     effectiveDate: new Date('2026-10-01T00:00:00.000Z'),
     remark: '用于华东区域销售激励。',
     status: 'DRAFT' as const,
     ownerId: 'user-viewer',
-    content: {
-      currency: 'CNY',
-      rules: [],
-    },
+    content: createSeedContent('scheme-001', PRICING_MODES.UNIT_PRICE),
     editVersion: 1,
     currentVersionNo: 1,
   },
@@ -81,15 +112,12 @@ const schemes = [
     code: 'SC2026002',
     name: '年度渠道激励方案',
     scope: '全国渠道',
-    pricingMode: 'TOTAL_POOL' as const,
+    pricingMode: PRICING_MODES.TOTAL_POOL,
     effectiveDate: new Date('2026-10-01T00:00:00.000Z'),
     remark: '年度渠道激励预算池。',
     status: 'PENDING_REVIEW' as const,
     ownerId: 'user-editor',
-    content: {
-      currency: 'CNY',
-      rules: [],
-    },
+    content: createSeedContent('scheme-002', PRICING_MODES.TOTAL_POOL),
     editVersion: 2,
     currentVersionNo: 1,
   },
@@ -98,15 +126,12 @@ const schemes = [
     code: 'SC2026003',
     name: '重点客户价格方案',
     scope: '重点客户',
-    pricingMode: 'UNIT_PRICE' as const,
+    pricingMode: PRICING_MODES.UNIT_PRICE,
     effectiveDate: new Date('2026-09-01T00:00:00.000Z'),
     remark: null,
     status: 'PUBLISHED' as const,
     ownerId: 'user-reviewer',
-    content: {
-      currency: 'CNY',
-      rules: [],
-    },
+    content: createSeedContent('scheme-003', PRICING_MODES.UNIT_PRICE),
     editVersion: 3,
     currentVersionNo: 2,
   },

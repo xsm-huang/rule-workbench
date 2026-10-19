@@ -14,6 +14,13 @@ export const RULE_GROUP_KEYS = {
   RISK: "RISK",
 };
 
+export const RULE_GROUP_DEFINITIONS = [
+  { key: "BASE", name: "基础规则" },
+  { key: "TIMELINESS", name: "时效规则" },
+  { key: "QUALITY", name: "质量规则" },
+  { key: "RISK", name: "风险规则" },
+] as const;
+
 /** 运行时校验器 */
 export const ruleGroupKeySchema = z.enum(RULE_GROUP_KEYS);
 

@@ -1,16 +1,31 @@
 <template>
-  <div>
-    <el-button type="primary" :disabled="disabled" @click="addRuleRow"> 新增规则行 </el-button>
+  <div class="rule-table-panel">
+    <div class="rule-toolbar">
+      <div>
+        <h3>
+          规则明细 <span>{{ rows.length }} 条</span>
+        </h3>
+        <p>填写区间和计价信息，向右滚动可查看调整系数及控制信息</p>
+      </div>
+      <el-button type="primary" plain :disabled="disabled" @click="addRuleRow"
+        >新增规则行</el-button
+      >
+    </div>
 
-    <el-table :data="rows" row-key="id" border>
-      <el-table-column type="index" label="行" width="60" />
+    <el-table :data="rows" row-key="id" border class="rule-table">
+      <el-table-column type="index" label="行" width="60" fixed="left" />
 
       <el-table-column
         v-for="(columnGroup, index) in fieldGroups"
         :key="`${columnGroup.label}-${index}`"
         :label="columnGroup.label"
       >
-        <el-table-column v-for="field in columnGroup.fields" :key="field.key" :label="field.label">
+        <el-table-column
+          v-for="field in columnGroup.fields"
+          :key="field.key"
+          :label="field.label"
+          :min-width="200"
+        >
           <template #default="{ row }">
             <div :id="`rule-${row.id}-${field.key}`" class="rule-cell">
               <el-input-number
@@ -24,6 +39,7 @@
                 v-else-if="field.component === 'date'"
                 v-model="row[field.key]"
                 type="date"
+                size="small"
                 value-format="YYYY-MM-DD"
                 :disabled="disabled"
               />
@@ -32,7 +48,7 @@
                 v-model="row[field.key]"
                 :disabled="disabled"
               />
-              <el-input v-else v-model="row[field.key]" :disabled="disabled" />
+              <el-input v-else v-model="row[field.key]" size="small" :disabled="disabled" />
 
               <span v-if="getFieldError(row.id, field.key)" class="rule-error">
                 {{ getFieldError(row.id, field.key) }}
@@ -42,7 +58,7 @@
         </el-table-column>
       </el-table-column>
 
-      <el-table-column label="操作" fixed="right" width="150">
+      <el-table-column label="操作" fixed="right" width="120">
         <template #default="{ row }">
           <el-button link type="primary" :disabled="disabled" @click="copyRuleRow(row.id)">
             复制
@@ -114,11 +130,62 @@ const removeRuleRow = (rowId: string): void => {
 </script>
 
 <style scoped lang="scss">
+.rule-table-panel {
+  min-width: 0;
+}
+
+.rule-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  h3 {
+    color: #34445a;
+    font-size: 15px;
+    font-weight: 650;
+
+    span {
+      margin-left: 4px;
+      color: #97a1af;
+      font-size: 12px;
+      font-weight: 400;
+    }
+  }
+
+  p {
+    margin-top: 4px;
+    color: #9aa4b2;
+    font-size: 12px;
+  }
+}
+
+.rule-table {
+  width: 100%;
+
+  :deep(.el-table__header-wrapper th) {
+    color: #53647a;
+    background: #f6f8fb;
+    font-weight: 600;
+  }
+
+  :deep(.el-table__cell) {
+    padding: 10px 0;
+  }
+}
+
 .rule-cell {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+
+  :deep(.el-input-number),
+  :deep(.el-date-editor),
+  :deep(.el-input) {
+    width: 100%;
+  }
 }
 
 .rule-error {

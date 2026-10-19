@@ -126,18 +126,24 @@
         <el-table-column prop="name" label="方案名称" min-width="200" />
         <el-table-column label="计价模式" width="140">
           <template #default="{ row }">
-            {{ getPricingModeLabel(row.pricingMode) }}
+            {{ PRICING_MODE_LABELS[row.pricingMode as PricingMode] }}
           </template>
         </el-table-column>
         <el-table-column label="状态" width="140">
           <template #default="{ row }">
-            <el-tag :type="statusConfig[row.status as SchemeStatus].type">
-              {{ statusConfig[row.status as SchemeStatus].label }}
+            <el-tag :type="SCHEME_STATUS_CONFIG[row.status as SchemeStatus].type">
+              {{ SCHEME_STATUS_CONFIG[row.status as SchemeStatus].label }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="ownerName" label="负责人" width="120" />
         <el-table-column prop="updatedAt" label="更新时间" width="180" />
+        <el-table-column label="操作" fixed="right" width="100">
+          <template #default="{ row }">
+            <!-- 所有已登录角色都可以查看详情。 -->
+            <el-button link type="primary" @click="openSchemeDetail(row.id)"> 查看 </el-button>
+          </template>
+        </el-table-column>
       </el-table>
       <div class="pagination-wrapper">
         <el-pagination
@@ -158,15 +164,16 @@
 import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuery } from '@tanstack/vue-query'
+import { type SchemeFilters, type SchemeListQuery, getSchemeList } from '@/api/schemes'
+import { useWorkbenchBootstrap } from '@/queries/workbench'
+import { SCHEME_STATUS_CONFIG } from './config/scheme-display'
 import {
-  type SchemeListQuery,
+  WORKBENCH_PERMISSIONS,
+  PRICING_MODE_LABELS,
   type PricingMode,
   type SchemeStatus,
-  type SchemeFilters,
-  getSchemeList,
-} from '@/api/schemes'
-import { useWorkbenchBootstrap } from '@/queries/workbench'
-import { WORKBENCH_PERMISSIONS, type WorkbenchPermission } from '@rule-workbench/contracts'
+  type WorkbenchPermission,
+} from '@rule-workbench/contracts'
 
 const { data: bootstrap } = useWorkbenchBootstrap()
 const hasPermission = (permission: WorkbenchPermission): boolean =>
@@ -281,25 +288,18 @@ const handlePageSizeChange = (pageSize: number) => {
   })
 }
 
-type StatusTagType = 'success' | 'warning' | 'info' | 'danger'
-
-const pricingModeMap: Record<PricingMode, string> = {
-  UNIT_PRICE: '单价',
-  TOTAL_POOL: '总池',
-}
-const statusConfig: Record<SchemeStatus, { label: string; type: StatusTagType }> = {
-  DRAFT: { label: '草稿', type: 'info' },
-  PENDING_REVIEW: { label: '待审核', type: 'warning' },
-  PUBLISHED: { label: '已发布', type: 'success' },
-  REJECTED: { label: '已驳回', type: 'danger' },
-}
-
-const getPricingModeLabel = (pricingMode: PricingMode): string => {
-  return pricingModeMap[pricingMode]
-}
-
 const openNewScheme = (): void => {
   router.push({ name: 'scheme-new' })
+}
+
+/** 从列表进入指定方案的只读详情页。 */
+const openSchemeDetail = (schemeId: string): void => {
+  void router.push({
+    name: 'scheme-detail',
+    params: {
+      id: schemeId,
+    },
+  })
 }
 </script>
 

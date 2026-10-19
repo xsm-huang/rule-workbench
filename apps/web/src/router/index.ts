@@ -48,8 +48,21 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/schemes/SchemeEditorView.vue'),
         meta: { requiredPermission: WORKBENCH_PERMISSIONS.SCHEME_CREATE },
       },
+      {
+        path: ':id/edit',
+        name: 'scheme-edit',
+        component: () => import('../views/schemes/SchemeEditView.vue'),
+        meta: { requiredPermission: WORKBENCH_PERMISSIONS.SCHEME_EDIT },
+      },
+      {
+        // 动态参数 id 对应数据库中的方案主键。
+        path: ':id',
+        name: 'scheme-detail',
+        component: () => import('../views/schemes/SchemeDetailView.vue'),
+      },
     ],
   },
+
   // 403页面
   {
     path: '/forbidden',

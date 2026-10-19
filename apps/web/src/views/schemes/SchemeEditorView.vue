@@ -1,98 +1,182 @@
 <template>
-  <div>
-    <header>
-      <h2>新建方案</h2>
-      <el-button type="primary" :loading="isPending" @click="saveDraft"> 保存草稿 </el-button>
+  <div class="scheme-editor">
+    <header class="editor-header">
+      <div class="editor-heading">
+        <nav class="breadcrumb" aria-label="页面位置">
+          <router-link :to="{ name: 'schemes' }">方案管理</router-link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{{ pageTitle }}</span>
+        </nav>
+        <div class="title-line">
+          <h1>{{ pageTitle }}</h1>
+          <el-tag
+            v-if="initialScheme"
+            :type="SCHEME_STATUS_CONFIG[initialScheme.status].type"
+            effect="plain"
+            round
+          >
+            {{ SCHEME_STATUS_CONFIG[initialScheme.status].label }}
+          </el-tag>
+          <el-tag v-else type="info" effect="plain" round>未保存</el-tag>
+        </div>
+        <p>{{ isEditing ? '调整方案信息和规则配置。' : '填写方案信息并配置规则，完成后保存为草稿。' }}</p>
+      </div>
+      <el-button v-if="isEditing" size="large" @click="backToDetail">返回详情</el-button>
+      <el-button v-else type="primary" size="large" :loading="isPending" @click="saveDraft">
+        保存草稿
+      </el-button>
     </header>
 
-    <el-form ref="formRef" :model="model" :rules="rules" label-position="top" inline>
-      <el-form-item label="方案编号">
-        <el-input model-value="保存后自动生成" disabled />
-      </el-form-item>
-      <el-form-item label="方案名称" prop="name">
-        <el-input v-model="model.name" :maxlength="30" show-word-limit />
-      </el-form-item>
-      <el-form-item label="适用范围" prop="scope">
-        <el-input v-model="model.scope" :maxlength="100" show-word-limit />
-      </el-form-item>
-      <el-form-item label="计价模式" prop="pricingMode">
-        <el-radio-group v-model="model.pricingMode">
-          <el-radio :value="PRICING_MODES.UNIT_PRICE">单价计价</el-radio>
-          <el-radio :value="PRICING_MODES.TOTAL_POOL">总盘计价</el-radio>
-        </el-radio-group>
-      </el-form-item>
-      <el-form-item label="方案生效日期" prop="effectiveDate">
-        <el-date-picker
-          v-model="model.effectiveDate"
-          type="date"
-          value-format="YYYY-MM-DD"
-          placeholder="请选择生效日期"
-        />
-      </el-form-item>
-      <el-form-item label="备注" prop="remark">
-        <el-input
-          v-model="model.remark"
-          type="textarea"
-          :rows="3"
-          :maxlength="500"
-          show-word-limit
-        />
-      </el-form-item>
-    </el-form>
+    <el-alert
+      v-if="isEditing"
+      class="edit-notice"
+      type="info"
+      title="当前修改仅在本页保留，离开或刷新后不会保存。"
+      :closable="false"
+      show-icon
+    />
 
-    <el-tabs v-model="activeGroupKey">
-      <el-tab-pane
-        v-for="group in model.content.groups"
-        :key="group.key"
-        :name="group.key"
-        :label="group.name"
-      >
-        <div class="rule-validation">
-          <el-button :disabled="model.pricingMode === null" @click="checkRanges">
-            检查区间
-          </el-button>
-
-          <div v-if="checkedRules" class="validation-result">
-            <el-alert :type="issues.length ? 'error' : 'success'" :closable="false">
-              <template #default>
-                <div>
-                  <span>
-                    {{ issues.length ? `发现 ${issues.length} 处区间错误` : '区间校验通过' }}
-                  </span>
-                  <el-button
-                    link
-                    type="primary"
-                    class="detail-toggle"
-                    @click="showIssueDetails = !showIssueDetails"
-                  >
-                    {{ showIssueDetails ? '收起' : '查看详情' }}
-                  </el-button>
-                </div>
-              </template>
-            </el-alert>
-
-            <template v-if="issues.length">
-              <el-collapse-transition>
-                <ul v-show="showIssueDetails" class="issue-list">
-                  <li v-for="(issue, index) in issues" :key="index">
-                    <el-button link type="danger" @click="locateIssue(issue)">
-                      {{ getIssueLabel(issue) }}
-                    </el-button>
-                  </li>
-                </ul>
-              </el-collapse-transition>
-            </template>
-          </div>
+    <section class="editor-card basic-card" aria-labelledby="basic-info-title">
+      <div class="section-heading">
+        <span class="section-index">01</span>
+        <div>
+          <h2 id="basic-info-title">基本信息</h2>
+          <p>设置方案的名称、范围和生效时间</p>
         </div>
-        <RuleTable
-          v-if="model.pricingMode !== null"
-          v-model:rows="group.rows"
-          :pricing-mode="model.pricingMode"
-          :issues="issues.filter((issue) => issue.groupKey === group.key)"
-        />
-        <el-empty v-else description="请先选择计价模式" />
-      </el-tab-pane>
-    </el-tabs>
+      </div>
+
+      <el-form
+        ref="formRef"
+        class="basic-form"
+        :model="model"
+        :rules="rules"
+        label-position="top"
+        size="large"
+      >
+        <div class="form-grid">
+          <el-form-item label="方案编号">
+            <el-input :model-value="initialScheme?.code ?? '保存后自动生成'" disabled />
+          </el-form-item>
+          <el-form-item label="方案名称" prop="name">
+            <el-input
+              v-model="model.name"
+              placeholder="请输入方案名称"
+              :maxlength="30"
+              show-word-limit
+            />
+          </el-form-item>
+          <el-form-item label="适用范围" prop="scope">
+            <el-input
+              v-model="model.scope"
+              placeholder="请输入适用业务或对象范围"
+              :maxlength="100"
+              show-word-limit
+            />
+          </el-form-item>
+          <el-form-item label="方案生效日期" prop="effectiveDate">
+            <el-date-picker
+              v-model="model.effectiveDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="请选择生效日期"
+            />
+          </el-form-item>
+          <el-form-item label="计价模式" prop="pricingMode">
+            <el-radio-group v-model="model.pricingMode" class="pricing-options">
+              <span class="pricing-choice">
+                <el-radio :value="PRICING_MODES.UNIT_PRICE">{{ PRICING_MODE_LABELS.UNIT_PRICE }}</el-radio>
+                <el-tooltip content="按区间设置单价，结合系数计算" placement="top">
+                  <span
+                    class="pricing-help"
+                    tabindex="0"
+                    aria-label="单价计价说明：按区间设置单价，结合系数计算"
+                    >i</span
+                  >
+                </el-tooltip>
+              </span>
+              <span class="pricing-choice">
+                <el-radio :value="PRICING_MODES.TOTAL_POOL">{{ PRICING_MODE_LABELS.TOTAL_POOL }}</el-radio>
+                <el-tooltip content="按区间设置总盘金额，结合系数计算" placement="top">
+                  <span
+                    class="pricing-help"
+                    tabindex="0"
+                    aria-label="总盘计价说明：按区间设置总盘金额，结合系数计算"
+                    >i</span
+                  >
+                </el-tooltip>
+              </span>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item class="form-grid__remark" label="备注" prop="remark">
+            <el-input
+              v-model="model.remark"
+              type="textarea"
+              :rows="2"
+              placeholder="可补充说明方案的适用场景或注意事项（选填）"
+              :maxlength="500"
+              show-word-limit
+            />
+          </el-form-item>
+        </div>
+      </el-form>
+    </section>
+
+    <section class="editor-card rules-card" aria-labelledby="rules-title">
+      <div class="section-heading section-heading--with-action">
+        <span class="section-index">02</span>
+        <div class="section-heading__copy">
+          <h2 id="rules-title">规则配置</h2>
+          <p>按分类维护规则；草稿允许稍后继续完善</p>
+        </div>
+        <el-button :disabled="model.pricingMode === null" @click="checkRanges">检查区间</el-button>
+      </div>
+
+      <div v-if="checkedRules" class="validation-result">
+        <el-alert :type="issues.length ? 'error' : 'success'" :closable="false">
+          <template #default>
+            <div class="validation-summary">
+              <span>{{ issues.length ? `发现 ${issues.length} 处区间错误` : '区间校验通过' }}</span>
+              <el-button
+                v-if="issues.length"
+                link
+                type="primary"
+                class="detail-toggle"
+                @click="showIssueDetails = !showIssueDetails"
+              >
+                {{ showIssueDetails ? '收起' : '查看详情' }}
+              </el-button>
+            </div>
+          </template>
+        </el-alert>
+
+        <el-collapse-transition>
+          <ul v-if="issues.length" v-show="showIssueDetails" class="issue-list">
+            <li v-for="(issue, index) in issues" :key="index">
+              <el-button link type="danger" @click="locateIssue(issue)">
+                {{ getIssueLabel(issue) }}
+              </el-button>
+            </li>
+          </ul>
+        </el-collapse-transition>
+      </div>
+
+      <el-tabs v-model="activeGroupKey" class="rule-tabs">
+        <el-tab-pane v-for="group in model.content.groups" :key="group.key" :name="group.key">
+          <template #label>
+            <span class="tab-label"
+              >{{ group.name }}<span class="tab-count">{{ group.rows.length }}</span></span
+            >
+          </template>
+          <RuleTable
+            v-if="model.pricingMode !== null"
+            v-model:rows="group.rows"
+            :pricing-mode="model.pricingMode"
+            :issues="issues.filter((issue) => issue.groupKey === group.key)"
+          />
+          <el-empty v-else description="选择计价模式后即可编辑规则" :image-size="88" />
+        </el-tab-pane>
+      </el-tabs>
+    </section>
   </div>
 </template>
 
@@ -103,18 +187,29 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import {
   PRICING_MODES,
+  PRICING_MODE_LABELS,
   RULE_GROUP_KEYS,
   type CreateSchemeInput,
+  type SchemeDetail,
   type ValidationIssue,
 } from '@rule-workbench/contracts'
 import { validateSchemeRules } from '@rule-workbench/rule-engine'
 import { createSchemeDraft } from '@/api/schemes'
 import { getApiErrorMessage } from '@/api/error'
 import RuleTable from './RuleTable.vue'
-import { createSchemeEditorModel } from './config/editor-model.ts'
+import { createSchemeEditorModel, toSchemeEditorModel } from './config/editor-model.ts'
+import { SCHEME_STATUS_CONFIG } from './config/scheme-display'
 import { WORKBENCH_BOOTSTRAP_QUERY_KEY } from '@/queries/workbench'
 
-const model = reactive(createSchemeEditorModel())
+const props = defineProps<{ initialScheme?: SchemeDetail }>()
+
+// 每次进入方案时只回填一次；后台重新获取详情时不能覆盖正在输入的内容。
+const initialScheme = props.initialScheme
+const isEditing = Boolean(initialScheme)
+const pageTitle = isEditing ? '编辑草稿方案' : '新建草稿方案'
+const model = reactive(
+  initialScheme ? toSchemeEditorModel(initialScheme) : createSchemeEditorModel(),
+)
 const activeGroupKey = ref(RULE_GROUP_KEYS.BASE)
 const checkedRules = ref(false)
 
@@ -146,6 +241,12 @@ const formRef = ref<FormInstance>()
 const router = useRouter()
 const queryClient = useQueryClient()
 
+const backToDetail = (): void => {
+  if (initialScheme) {
+    void router.push({ name: 'scheme-detail', params: { id: initialScheme.id } })
+  }
+}
+
 const { mutateAsync: createDraft, isPending } = useMutation({
   mutationFn: createSchemeDraft,
   onSuccess: async () => {
@@ -158,7 +259,8 @@ const { mutateAsync: createDraft, isPending } = useMutation({
 })
 
 const saveDraft = async (): Promise<void> => {
-  if (!formRef.value || isPending.value) return
+  // 已有草稿的更新保存由单独接口处理，不能调用创建接口生成重复方案。
+  if (isEditing || !formRef.value || isPending.value) return
 
   const isFormValid = await formRef.value.validate().catch(() => false)
   if (!isFormValid || model.pricingMode === null) return
@@ -223,22 +325,296 @@ const locateIssue = async (issue: ValidationIssue): Promise<void> => {
 </script>
 
 <style scoped lang="scss">
-.rule-validation {
-  margin: 16px 0;
+.scheme-editor {
+  min-width: 0;
+  max-width: 1560px;
+  margin: 0 auto;
+  color: #263247;
+}
+
+.edit-notice {
+  margin-bottom: 20px;
+}
+
+.editor-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  > .el-button {
+    min-width: 112px;
+    margin-bottom: 2px;
+  }
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: #8a94a5;
+  font-size: 13px;
+
+  a:hover {
+    color: var(--el-color-primary);
+  }
+
+  [aria-current='page'] {
+    color: #5d6a7d;
+  }
+}
+
+.title-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h1 {
+    font-size: 26px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+}
+
+.editor-heading > p {
+  margin-top: 8px;
+  color: #7d899a;
+  font-size: 14px;
+}
+
+.editor-card {
+  min-width: 0;
+  padding: 28px 32px 32px;
+  border: 1px solid #e8edf3;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  background: #fff;
+  box-shadow: 0 4px 20px rgb(28 54 91 / 3%);
+}
+
+.basic-card .section-heading {
+  margin-bottom: 20px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 26px;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 650;
+    line-height: 1.4;
+  }
+
+  p {
+    margin-top: 4px;
+    color: #8993a3;
+    font-size: 13px;
+  }
+}
+
+.section-heading--with-action {
+  align-items: center;
+
+  .section-heading__copy {
+    flex: 1;
+  }
+}
+
+.section-index {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  place-items: center;
+  border-radius: 9px;
+  color: #3b70c8;
+  background: #eaf2ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px 22px;
+}
+
+.form-grid__remark {
+  grid-column: span 2;
+}
+
+.basic-form {
+  :deep(.el-form-item) {
+    min-width: 0;
+    margin-bottom: 0;
+  }
+
+  :deep(.el-form-item__label) {
+    padding-bottom: 6px;
+    color: #415066;
+    font-weight: 600;
+  }
+
+  :deep(.el-input),
+  :deep(.el-date-editor) {
+    width: 100%;
+  }
+
+  :deep(.el-textarea__inner) {
+    min-height: 78px;
+  }
+}
+
+.pricing-options {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 30px;
+}
+
+.pricing-choice {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+
+  :deep(.el-radio) {
+    margin-right: 0;
+  }
+
+  :deep(.el-radio__label) {
+    color: #34445a;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  :deep(.el-radio.is-checked .el-radio__label) {
+    color: #2f6fca;
+  }
+}
+
+.pricing-help {
+  display: inline-grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid #b6c3d3;
+  border-radius: 50%;
+  margin-left: 6px;
+  color: #73849a;
+  background: #f6f8fb;
+  cursor: help;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+
+  &:hover,
+  &:focus-visible {
+    border-color: #7aa8e9;
+    color: #2f6fca;
+    background: #edf5ff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #a7ccff;
+    outline-offset: 2px;
+  }
 }
 
 .validation-result {
-  margin-top: 12px;
+  margin: -4px 0 20px;
+}
+
+.validation-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .issue-list {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   padding-left: 20px;
 }
-.editor-header {
+
+.issue-list li + li {
+  margin-top: 4px;
+}
+
+.rule-tabs {
+  min-width: 0;
+
+  :deep(.el-tabs__header) {
+    margin-bottom: 20px;
+  }
+
+  :deep(.el-tabs__item) {
+    height: 44px;
+    padding: 0 22px;
+    color: #68778d;
+    font-weight: 600;
+  }
+
+  :deep(.el-tabs__item.is-active) {
+    color: var(--el-color-primary);
+  }
+
+  :deep(.el-tabs__content) {
+    overflow: visible;
+  }
+}
+
+.tab-label {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
+  gap: 8px;
+}
+
+.tab-count {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: #f0f3f8;
+  font-size: 11px;
+  line-height: 1;
+}
+
+@media (max-width: 1100px) {
+  .editor-card {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .form-grid__remark {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .editor-header {
+    align-items: flex-start;
+  }
+
+  .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-grid__remark {
+    grid-column: auto;
+  }
 }
 </style>

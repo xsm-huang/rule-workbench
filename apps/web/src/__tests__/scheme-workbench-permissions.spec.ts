@@ -53,8 +53,8 @@ function createBootstrap(
         { label: '已驳回', value: 'REJECTED' },
       ],
       pricingModes: [
-        { label: '单价', value: 'UNIT_PRICE' },
-        { label: '总池', value: 'TOTAL_POOL' },
+        { label: '单价计价', value: 'UNIT_PRICE' },
+        { label: '总盘计价', value: 'TOTAL_POOL' },
       ],
     },
     summary: {
@@ -145,7 +145,7 @@ describe('SchemeWorkbench permissions', () => {
     expect(wrapper.text()).toContain('最近 7 天更新：9')
     expect(wrapper.text()).toContain('草稿')
     expect(wrapper.text()).toContain('待审核')
-    expect(wrapper.text()).toContain('单价')
-    expect(wrapper.text()).toContain('总池')
+    expect(wrapper.text()).toContain('单价计价')
+    expect(wrapper.text()).toContain('总盘计价')
   })
 })
